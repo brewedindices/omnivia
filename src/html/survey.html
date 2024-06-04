@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ </head>
+<body>
+    <div id="surveyContainer">
+        </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const surveyId = urlParams.get('id');
+
+            if (surveyId) {
+                fetchSurvey(surveyId);
+            } else {
+                // Handle error - survey ID is missing 
+            }
+        });
+
+        async function fetchSurvey(surveyId) {
+            try {
+                // Fetch survey data from your backend (replace with your Replit API endpoint)
+                const response = await axios.get(`https://your-replit-app-name.username.repl.co/get-survey/${surveyId}`);
+                if (response.status === 200) {
+                    const surveyData = response.data;
+                    displaySurvey(surveyData);
+                } else {
+                    console.error('Error fetching survey:', response.status);
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+            }
+        }
+
+        function displaySurvey(surveyData) {
+            const surveyContainer = document.getElementById('surveyContainer');
+            const titleElement = document.createElement('h2');
+            titleElement.textContent = surveyData.title;
+            surveyContainer.appendChild(titleElement);
+
+            surveyData.questions.forEach(question => {
+                const questionElement = document.createElement('p');
+                questionElement.textContent = question.text;
+                surveyContainer.appendChild(questionElement);
+
+                const optionsList = document.createElement('ul');
+                question.options.forEach(option => {
+                    const optionItem = document.createElement('li');
+                    const optionButton = document.createElement('button');
+                    optionButton.textContent = option;
+                    optionButton.addEventListener('click', function() {
+                        submitResponse(surveyId, option); 
+                    });
+                    optionItem.appendChild(optionButton);
+                    optionsList.appendChild(optionItem);
+                });
+
+                surveyContainer.appendChild(optionsList);
+            });
+        }
+
+        async function submitResponse(surveyId, response) {
+            try {
+                const response = await axios.post(`https://your-replit-app-name.username.repl.co/submit-response/${surveyId}`, { 
+                    response: response
+                });
+                // ... (Handle successful response submission) ...
+                // For now, let's redirect to the results page
+                window.location.href = 'survey_results.html';
+
+            } catch (error) {
+                // ... (Handle submission errors) ...
+            }
+        }
+    </script>
+</body>
+</html>

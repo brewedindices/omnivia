@@ -1,32 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <title>Page title</title>
+  <head>
+    <title>Create Survey</title> 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap">
     <link rel="stylesheet" href="css/tailwind/tailwind.min.css">
     <link rel="icon" type="image/png" sizes="32x32" href="shuffle-for-tailwind.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.5.1/nouislider.min.css" /> 
+
     <script src="js/main.js"></script>
-</head>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.5.1/nouislider.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wnumb@1.2.0/wNumb.min.js"></script>
+    <style>
+      .noUi-connect {
+        background: #4CAF50; /* Adjust this color to your desired lower bound color */
+      }
+
+      .noUi-handle {
+        border: none;
+        background: #007BFF; /* Adjust this color to your desired upper bound color */
+        height: 18px;  /* Adjust to your desired handle height */
+        width: 20px; /* Adjust to your desired handle width */
+        top: -11px; /* Fine-tune this value */
+      }
+
+      .noUi-horizontal .noUi-handle {
+        top: -16px; /* Adjust this value to fix alignment issues */
+      }
+
+      .noUi-horizontal .noUi-handle:before,
+      .noUi-horizontal .noUi-handle:after {
+        display: none; /* Remove default handle styles if necessary */
+      }
+
+      .noUi-tooltip {
+        display: block;
+        background: #333;
+        color: #fff;
+        border-radius: 3px;
+        padding: 5px;
+        font-size: 12px;
+        text-align: center;
+      }
+    </style>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const genderRatioSlider = document.getElementById('gender-ratio-slider');
+        const ageRangeSlider = document.getElementById('age-range-slider');
+        const incomeRangeSlider = document.getElementById('income-range-slider');
+
+        noUiSlider.create(genderRatioSlider, {
+          start: [50],
+          connect: [true, false],
+          range: {
+            'min': 0,
+            'max': 100
+          },
+          format: wNumb({
+            decimals: 0,
+            suffix: '%'
+          })
+        });
+
+        noUiSlider.create(ageRangeSlider, {
+          start: [25, 45],
+          connect: true,
+          range: {
+            'min': 0,
+            'max': 100
+          },
+          format: wNumb({
+            decimals: 0
+          })
+        });
+
+        noUiSlider.create(incomeRangeSlider, {
+          start: [0, 100000],
+          connect: true,
+          range: {
+            'min': 0,
+            'max': 1000000
+          },
+          format: wNumb({
+            decimals: 0,
+            prefix: '$'
+          })
+        });
+
+        // Update label values
+        genderRatioSlider.noUiSlider.on('update', function(values, handle) {
+          document.querySelector('.malePercentage').innerText = values[handle];
+        });
+
+        ageRangeSlider.noUiSlider.on('update', function(values, handle) {
+          if (handle === 0) {
+            document.querySelector('.ageMinLabel').innerText = values[handle];
+          } else {
+            document.querySelector('.ageMaxLabel').innerText = values[handle];
+          }
+        });
+
+        incomeRangeSlider.noUiSlider.on('update', function(values, handle) {
+          if (handle === 0) {
+            document.querySelector('.incomeMinLabel').innerText = values[handle];
+          } else {
+            document.querySelector('.incomeMaxLabel').innerText = values[handle];
+          }
+        });
+
+      });
+    </script>
+  </head>
+  
 <body class="antialiased bg-body text-body font-body">
     <div class="">
-                
-      <div>
+
         <nav class="lg:hidden py-6 px-6 bg-gray-800">
-          <div class="flex items-center justify-between">
-            <a class="text-2xl text-white font-semibold" href="#">
-              <img class="h-10" src="artemis-assets/logos/artemis-logo.svg" alt="" width="auto">
-            </a>
-            <button class="navbar-burger flex items-center rounded focus:outline-none">
-              <svg class="text-white bg-indigo-500 hover:bg-indigo-600 block h-8 w-8 p-2 rounded" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                <title>Mobile menu</title>
-                <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"></path>
-              </svg>
-            </button>
-          </div>
+            <div class="flex items-center justify-between">
+              <a class="text-2xl text-white font-semibold" href="#">
+                <img class="h-10" src="artemis-assets/logos/artemis-logo.svg" alt="" width="auto">
+              </a>
+              <button class="navbar-burger flex items-center rounded focus:outline-none">
+                <svg class="text-white bg-indigo-500 hover:bg-indigo-600 block h-8 w-8 p-2 rounded" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                  <title>Mobile menu</title>
+                  <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"></path>
+                </svg>
+              </button>
+            </div>
         </nav>
+
+        
         <div class="hidden lg:block navbar-menu relative z-50">
           <div class="navbar-backdrop fixed lg:hidden inset-0 bg-gray-800 opacity-10"></div>
           <nav class="fixed top-0 left-0 bottom-0 flex flex-col w-3/4 lg:w-80 sm:max-w-xs pt-6 pb-8 bg-gray-800 overflow-y-auto">
@@ -142,6 +249,8 @@
             <div class="flex items-center mb-5 lg:mb-0">
               <span class="inline-flex justify-center items-center w-16 h-16 mr-4 bg-indigo-500 rounded">
                 <svg class="h-7 w-7 text-white" viewbox="0 0 28 26" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.3328 5.66668H19.3328V4.33334C19.3328 3.27248 18.9114 2.25506 18.1612 1.50492C17.4111 0.754771 16.3937 0.333344 15.3328 0.333344H12.6661C11.6053 0.333344 10.5879 0.754771 9.83771 1.50492C9.08757 2.25506 8.66614 3.27248 8.66614 4.33334V5.66668H4.66614C3.60527 5.66668 2.58786 6.0881 1.83771 6.83825C1.08757 7.58839 0.666138 8.60581 0.666138 9.66668V21.6667C0.666138 22.7275 1.08757 23.745 1.83771 24.4951C2.58786 25.2452 3.60527 25.6667 4.66614 25.6667H23.3328C24.3937 25.6667 25.4111 25.2452 26.1612 24.4951C26.9114 23.745 27.3328 22.7275 27.3328 21.6667V9.66668C27.3328 8.60581 26.9114 7.58839 26.1612 6.83825C25.4111 6.0881 24.3937 5.66668 23.3328 5.66668ZM11.3328 4.33334C11.3328 3.97972 11.4733 3.64058 11.7233 3.39053C11.9734 3.14049 12.3125 3.00001 12.6661 3.00001H15.3328C15.6864 3.00001 16.0256 3.14049 16.2756 3.39053C16.5257 3.64058 16.6661 3.97972 16.6661 4.33334V5.66668H11.3328V4.33334ZM24.6661 21.6667C24.6661 22.0203 24.5257 22.3594 24.2756 22.6095C24.0256 22.8595 23.6864 23 23.3328 23H4.66614C4.31252 23 3.97338 22.8595 3.72333 22.6095C3.47328 22.3594 3.3328 22.0203 3.3328 21.6667V14.9333H7.33281V16.3333C7.33281 16.687 7.47328 17.0261 7.72333 17.2761C7.97338 17.5262 8.31252 17.6667 8.66614 17.6667C9.01976 17.6667 9.3589 17.5262 9.60895 17.2761C9.859 17.0261 9.99947 16.687 9.99947 16.3333V14.9333H17.9995V16.3333C17.9995 16.687 18.1399 17.0261 18.39 17.2761C18.64 17.5262 18.9792 17.6667 19.3328 17.6667C19.6864 17.6667 20.0256 17.5262 20.2756 17.2761C20.5257 17.0261 20.6661 16.687 20.6661 16.3333V14.9333H24.6661V21.6667ZM24.6661 12.3333H3.3328V9.66668C3.3328 9.31305 3.47328 8.97392 3.72333 8.72387C3.97338 8.47382 4.31252 8.33334 4.66614 8.33334H23.3328C23.6864 8.33334 24.0256 8.47382 24.2756 8.72387C24.5257 8.97392 24.6661 9.31305 24.6661 9.66668V12.3333Z" fill="currentColor"></path></svg></span>
+
+              
               <div>
                 <h2 class="mb-1 text-2xl font-bold">Create Survey</h2>
                 <p class="text-sm text-gray-500 font-medium">
@@ -185,71 +294,61 @@
               </div>
             </div>
           </div>
-        </section><section class="py-8 px-6"><div class="container mx-auto">
+        </section>
+        
+        <section class="py-8 px-6">
+          <div class="container mx-auto">
             <div class="flex flex-wrap -mx-4">
               <div class="w-full px-4 mb-6">
                 <div class="relative px-6 pb-6 pt-4 bg-white rounded shadow">
                   <h3 class="text-xl font-bold mb-4">Cohort Demographics</h3>
                   <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Cohort ID</label>
-                    <input type="text" class="cohort-id mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="e.g., New Graduates, Middle Aged"></div>
-                  <div class="mb-4 flex items-center space-x-4">
-                    <div class="w-1/2">
-                      <label class="block text-sm font-medium text-gray-700">Gender Ratio</label>
-                      <div class="flex items-center">
-                        <span class="mr-2">Male 50%</span>
-                        <div class="gender-ratio-slider flex-1 noUi-target noUi-ltr noUi-horizontal noUi-txt-dir-ltr">
-                          <div class="noUi-base">
-                            <div class="noUi-connects"></div>
-                            <div class="noUi-origin" style="transform: translate(-500%, 0px); z-index: 4;">
-                              <div class="noUi-handle noUi-handle-lower" data-handle="0" tabindex="0" role="slider" aria-orientation="horizontal" aria-valuemin="0.0" aria-valuemax="100.0" aria-valuenow="50.0" aria-valuetext="50.00">
-                                <div class="noUi-touch-area"></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <span class="ml-2">Female 50%</span>
-                      </div>
-                    </div>
-                    <div class="w-1/2">
-                      <label class="block text-sm font-medium text-gray-700">Age Range</label>
-                      <div class="flex items-center">
-                        <span class="mr-2 ageMinLabel">25</span>
-                        <div class="age-range-slider flex-1 noUi-target noUi-ltr noUi-horizontal noUi-txt-dir-ltr">
-                          <div class="noUi-base">
-                            <div class="noUi-connects">
-                              <div class="noUi-connect" style="transform: translate(25%, 0px) scale(0.2, 1);"></div>
-                            </div>
-                            <div class="noUi-origin" style="transform: translate(-750%, 0px); z-index: 5;">
-                              <div class="noUi-handle noUi-handle-lower" data-handle="0" tabindex="0" role="slider" aria-orientation="horizontal" aria-valuemin="0.0" aria-valuemax="45.0" aria-valuenow="25.0" aria-valuetext="25.00">
-                                <div class="noUi-touch-area"></div>
-                              </div>
-                            </div>
-                            <div class="noUi-origin" style="transform: translate(-550%, 0px); z-index: 6;">
-                              <div class="noUi-handle noUi-handle-upper" data-handle="1" tabindex="0" role="slider" aria-orientation="horizontal" aria-valuemin="25.0" aria-valuemax="100.0" aria-valuenow="45.0" aria-valuetext="45.00">
-                                <div class="noUi-touch-area"></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <span class="ml-2 ageMaxLabel">45</span>
-                      </div>
-                    </div>
+                    <label for="cohortId" class="block text-sm font-medium text-gray-700">Cohort ID</label>
+                    <input type="text" id="cohortId" name="cohortId" class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="e.g., New Graduates, Middle Aged">
                   </div>
-                  <div class="mb-4 flex items-center space-x-4">
-                    <div class="w-1/3">
-                      <label class="text-sm font-medium text-gray-700">Income Min</label>
-                      <input type="number" class="incomeMin mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Min"></div>
-                    <div class="w-1/3">
-                      <label class="text-sm font-medium text-gray-700">Income Max</label>
-                      <input type="number" class="incomeMax mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Max"></div>
-                    <div class="w-1/3">
-                      <label class="text-sm font-medium text-gray-700">Location Type</label>
-                      <select class="locationType mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"><option value="country">Country</option><option value="us_state">US State</option></select></div>
-                  </div>
+
                   <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Location</label>
-                    <select class="location mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" multiple><option value="USA">United States</option></select></div>
+                    <label class="block text-sm font-medium text-gray-700">Gender Ratio</label>
+                    <div class="flex items-center">
+                      <span class="mr-2 malePercentage">50%</span>
+                      <div id="gender-ratio-slider" class="gender-ratio-slider flex-1 noUi-target noUi-ltr noUi-horizontal noUi-txt-dir-ltr"></div>
+                      <span class="ml-2 femalePercentage">50%</span>
+                    </div>
+                  </div>
+
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Age Range</label>
+                    <div class="flex items-center">
+                      <span class="mr-2 ageMinLabel">25</span>
+                      <div id="age-range-slider" class="age-range-slider flex-1 noUi-target noUi-ltr noUi-horizontal noUi-txt-dir-ltr"></div>
+                      <span class="ml-2 ageMaxLabel">45</span>
+                    </div>
+                  </div>
+
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Income Range ($)</label>
+                    <div class="flex items-center">
+                      <span class="mr-2 incomeMinLabel">$0</span>
+                      <div id="income-range-slider" class="income-range-slider flex-1 noUi-target noUi-ltr noUi-horizontal noUi-txt-dir-ltr"></div>
+                      <span class="ml-2 incomeMaxLabel">$1,000,000</span>
+                    </div>
+                  </div>
+
+                  <div class="mb-4">
+                    <label for="locationType" class="block text-sm font-medium text-gray-700">Location Type</label>
+                    <select id="locationType" class="locationType mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                      <option value="country">Country</option>
+                      <option value="us_state">US State</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-4">
+                    <label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+                    <select id="location" class="location mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" multiple>
+                      <option value="USA">United States</option>
+                    </select>
+                  </div>
+
                   <div class="flex items-center justify-end">
                     <button class="submit-survey-btn mt-4 w-auto py-2 px-3 text-xs text-white" style="background-color: #015df4;">
                       <span>Submit Survey</span>
@@ -259,37 +358,86 @@
               </div>
             </div>
           </div>
-        </section></div>
+        </section>
+
+
+      </div>
       </div>
       </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.5.1/nouislider.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="js/charts-demo.js"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // Get references to the table, add button, and template row
-        const questionTable = document.getElementById('questionTable').getElementsByTagName('tbody')[0];
-        const addQuestionBtn = document.getElementById('addQuestionBtn');
-        const questionRowTemplate = document.querySelector('.question-row'); 
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const genderRatioSlider = document.getElementById('gender-ratio-slider');
+      const ageRangeSlider = document.getElementById('age-range-slider');
+      const incomeRangeSlider = document.getElementById('income-range-slider');
 
-        // Function to add a new question row
-        function addQuestionRow() {
-          const newRow = questionRowTemplate.cloneNode(true); // Clone the template
-          const removeBtn = newRow.querySelector('.remove-row-btn'); 
-          removeBtn.classList.remove('hidden'); // Show the remove button
-
-          // Add event listener to the remove button
-          removeBtn.addEventListener('click', function() {
-            questionTable.removeChild(newRow); // Remove the row
-          });
-
-          questionTable.appendChild(newRow); // Add the new row to the table
-        }
-
-        // Add event listener to the "Add Question" button
-        addQuestionBtn.addEventListener('click', addQuestionRow);
+      noUiSlider.create(genderRatioSlider, {
+        start: [50],
+        connect: [true, false],
+        range: {
+          'min': 0,
+          'max': 100
+        },
+        format: wNumb({
+          decimals: 0,
+          suffix: '%'
+        }),
+        tooltips: true
       });
-    </script>
+
+      noUiSlider.create(ageRangeSlider, {
+        start: [25, 45],
+        connect: true,
+        range: {
+          'min': 0,
+          'max': 100
+        },
+        format: wNumb({
+          decimals: 0
+        }),
+        tooltips: [true, true]
+      });
+
+      noUiSlider.create(incomeRangeSlider, {
+        start: [0, 100000],
+        connect: true,
+        range: {
+          'min': 0,
+          'max': 1000000
+        },
+        format: wNumb({
+          decimals: 0,
+          prefix: '$'
+        }),
+        tooltips: [true, true]
+      });
+
+      // Update label values
+      genderRatioSlider.noUiSlider.on('update', function(values, handle) {
+        document.querySelector('.malePercentage').innerText = values[handle];
+      });
+
+      ageRangeSlider.noUiSlider.on('update', function(values, handle) {
+        if (handle === 0) {
+          document.querySelector('.ageMinLabel').innerText = values[handle];
+        } else {
+          document.querySelector('.ageMaxLabel').innerText = values[handle];
+        }
+      });
+
+      incomeRangeSlider.noUiSlider.on('update', function(values, handle) {
+        if (handle === 0) {
+          document.querySelector('.incomeMinLabel').innerText = values[handle];
+        } else {
+          document.querySelector('.incomeMaxLabel').innerText = values[handle];
+        }
+      });
+
+    });
+  </script>
+
 </body>
 </html>
-
