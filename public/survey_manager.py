@@ -9,7 +9,14 @@ from flask import Flask, request, jsonify
 from replit import db  # Import Replit Database
 from datetime import datetime
 from flask import Flask, request, jsonify
+import string
+
 app = Flask(__name__)
+
+from flask import Flask, request, jsonify
+import random
+import string
+
 
 # Dictionary to store subscription tiers and their max AI agents
 subscription_tiers = {

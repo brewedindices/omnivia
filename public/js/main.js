@@ -77,42 +77,39 @@ submitSurveyBtn.addEventListener('click', function() {
 
         // Send the survey data to the server
         axios.post('/create-survey', surveyData)
-          .then(function(response) {
-            console.log(response.data);
-            // Handle successful response (e.g., redirect to a success page)
-          })
-          .catch(function(error) {
-            console.error(error);
-            // Handle error (e.g., display an error message)
-          });
+            .then(function(response) {
+              console.log(response.data);
+              // Handle successful response
+              const surveyId = response.data.survey_id; // Get the surveyId from the response
 
-        axios.post(`/run-survey/${surveyId}`, { num_bots: numBots, surveyData })
-          .then(function(response) {
-            console.log(response.data);
-            // Handle successful response (e.g., redirect to a success page)
-          })
-          .catch(function(error) {
-            console.error(error);
-            // Handle error (e.g., display an error message)
-            if (response.data.success) {
-              // Display success message or modal
-              alert('Survey created successfully!');
-              // Optionally, you can redirect to the survey_results.html page
-              // window.location.href = `survey_results.html?id=${response.data.surveyId}`;
-            } else {
-              // Display error message
-              alert(`Error creating survey: ${response.data.message}`);
-            }
-          } catch (error) {
-            // Handle error
-            console.error('Error creating survey:', error);
-            alert('An error occurred while creating the survey.');
-          } finally {
-            // Hide loading indicator
-            submitSurveyBtn.disabled = false;
-            submitSurveyBtn.innerHTML = 'Submit Survey';
-          }
-    });
+              // Prompt the user for the number of bots
+              const numBots = prompt('Enter the number of bots to simulate:');
+
+              // Send the second request with surveyId and numBots
+              axios.post(`/run-survey/${surveyId}`, { num_bots: numBots, surveyData })
+                .then(function(response) {
+                  console.log(response.data);
+                  // Handle successful response (e.g., redirect to a success page)
+                })
+                .catch(function(error) {
+                  console.error(error);
+                  // Handle error (e.g., display an error message)
+                });
+            })
+            .catch(function(error) {
+              console.error(error);
+              // Handle error (e.g., display an error message)
+            });
+        } catch (error) {
+          // Handle error
+          console.error('Error creating survey:', error);
+          alert('An error occurred while creating the survey.');
+        } finally {
+          // Hide loading indicator
+          submitSurveyBtn.disabled = false;
+          submitSurveyBtn.innerHTML = 'Submit Survey';
+        }
+      });
 
 document.addEventListener('DOMContentLoaded', function() {
     const addQuestionBtn = document.getElementById('addQuestionBtn');
