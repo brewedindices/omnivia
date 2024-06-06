@@ -4,10 +4,37 @@ import concurrent.futures
 from tqdm import tqdm
 import time
 import math
-import pandas as pd
 import random
 from flask import Flask, request, jsonify
 from replit import db  # Import Replit Database
+from datetime import datetime
+from flask import Flask, request, jsonify
+app = Flask(__name__)
+
+# Dictionary to store subscription tiers and their max AI agents
+subscription_tiers = {
+    'basic': 10,
+    'standard': 50,
+    'premium': 100
+}
+
+# Dictionary to store user subscription information
+user_subscriptions = {}
+
+# Route to handle survey submission
+@app.route('/create_survey', methods=['POST'])
+def submit_survey():
+    # Get survey data from request
+    survey_data = request.get_json()
+
+    # Save survey data to database
+    db[str(datetime.now())] = survey_data
+
+    return jsonify({'message': 'Survey submitted successfully'})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+
 
 app = Flask(__name__)
 
@@ -56,12 +83,52 @@ def get_survey(survey_id):
     """Retrieves survey data from the database."""
     return db.get(survey_id)
 
-def record_response(survey_id, response_data, persona_id=None):  # Add persona_id (optional)
-    """Stores a user's response to a survey in the database."""
-    responses_key = f"{survey_id}_responses"
-    if responses_key not in db:
-        db[responses_key] = []
-    db[responses_key].append({'persona_id': persona_id, **response_data}) 
+def record_response(survey_id, response_data, persona_id=None):
+    """
+    Stores a user's response to a survey in the database.
+    
+    Args:
+        survey_id (str): The unique identifier of the survey.
+        response_data (dict): A dictionary containing the response data.
+        persona_id (str, optional): The unique identifier of the persona associated with the response.
+            If provided, the response will be associated with the specified persona.
+            If not provided, the response will be recorded without a persona association.
+    """
+    timestamp = datetime.now().isoformat()
+    response_key = f"response_{survey_id}_{persona_id}_{response_data['questionId']}"
+    response = {
+        'surveyId': survey_id,
+        'userId': persona_id,
+        'questionId': response_data['questionId'],
+        'responseContent': response_data['response'],
+        'timestamp': timestamp
+    }
+    db[response_key] = response
+
+def aggregate_responses(survey_id):
+    """Aggregates responses for a given survey."""
+    @app.route('/get-survey-results/<survey_id>', methods=['GET'])
+    def get_survey_results(survey_id):
+        aggregated_responses = aggregate_responses(survey_id)
+        return jsonify(aggregated_responses)
+
+    
+    responses = db.prefix(f"response_{survey_id}_")
+    aggregated_responses = {}
+
+    for response_key, response_data in responses.items():
+        question_id = response_data['questionId']
+        response_content = response_data['responseContent']
+
+        if question_id not in aggregated_responses:
+            aggregated_responses[question_id] = {}
+
+        if response_content not in aggregated_responses[question_id]:
+            aggregated_responses[question_id][response_content] = 0
+
+        aggregated_responses[question_id][response_content] += 1
+
+    return aggregated_responses
 
 
 # ---  CrewAI Agents and Tasks ---
@@ -83,6 +150,18 @@ action_taker = Agent(
     verbose=False,
     allow_delegation=False
 )
+
+# Placeholder function to get the user's ID
+def get_user_id():
+    # Replace this with your actual logic to retrieve the user's ID
+    return 'user_123'  # Example user ID
+
+# Placeholder function to get the user's remaining AI agents
+def get_user_remaining_agents(user_id):
+    # Replace this with your actual logic to retrieve the user's remaining AI agents from the database
+    # For now, we'll return a hardcoded value
+    return 50  # Example remaining AI agents
+
 
 def process_response(survey_question, options, response, persona_backstory):
     """Process a single survey response using CrewAI."""
@@ -130,6 +209,21 @@ def process_response(survey_question, options, response, persona_backstory):
     def run_survey(survey_id):
         data = request.get_json()
         num_bots = int(data.get("num_bots", 10))
+        survey_data = data.get("surveyData")
+
+        # Get the user's ID
+        user_id = get_user_id()
+
+        # Retrieve the user's subscription information from the database
+        # For now, we'll assume a hardcoded subscription limit
+        max_bots_allowed = 100  # Example subscription limit
+
+        # Check if the requested number of bots exceeds the user's subscription limit
+        if num_bots > max_bots_allowed:
+            return jsonify({'error': 'Requested number of AI agents exceeds your subscription limit.'}), 400
+
+        # Update the user's remaining AI agents in the database
+        update_user_remaining_agents(user_id, num_bots)
 
         bot_responses = {}
         MAX_CONCURRENT_THREADS = 25
@@ -177,6 +271,17 @@ def process_response(survey_question, options, response, persona_backstory):
 
         # Return a simple acknowledgment for the user
         return jsonify({'message': 'Response submitted successfully!'})
+    
+    @app.route('/get-remaining-agents', methods=['GET'])
+    def get_remaining_agents():
+        # Get the user's ID
+        user_id = get_user_id()
+
+        # Retrieve the user's remaining AI agents from the database
+        remaining_agents = get_user_remaining_agents(user_id)
+
+        return jsonify({'remaining_agents': remaining_agents})
+
 
     if __name__ == '__main__':
         app.run(host='0.0.0.0', port=5000)

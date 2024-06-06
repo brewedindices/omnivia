@@ -131,39 +131,42 @@
         </div>
         <div class="mx-auto lg:ml-80">
       
-      <div class="container mx-auto py-8 px-4">
-        <div class="mb-6">
-          <h2 class="text-2xl font-bold">Survey Results</h2>
-          <p class="text-sm text-gray-500">Overview of the survey results and insights</p>
-        </div>
-      
-        <div class="mb-6">
-          <h3 class="text-xl font-bold">Survey Title: <span class="font-medium">Customer Satisfaction Survey</span></h3>
-          <p class="text-sm text-gray-500">Date: January 1, 2024</p>
-          <p class="text-sm text-gray-500">Description: A brief summary of the survey purpose and objectives.</p>
-        </div>
-      
-        <div class="mb-6">
-          <h3 class="text-lg font-bold">Summary</h3>
-          <p class="text-sm">Participation Rate: 85%</p>
-          <p class="text-sm">Total Respondents: 340</p>
-          <p class="text-sm">Key Insights: The majority of respondents are satisfied with our services.</p>
-        </div>
-      
-        <div class="mb-6">
-          <h3 class="text-lg font-bold">Detailed Results</h3>
-          <!-- Example chart -->
-          <div class="my-4">
-            <h4 class="text-md font-bold">Question 1: How satisfied are you with our service?</h4>
-            <!-- Placeholder for chart -->
-            <div class="bg-gray-100 p-4 rounded shadow-md">
-              <img src="chart_placeholder.png" alt="Chart for Question 1"></div>
-            <p class="text-sm">Option A: 60% (204)</p>
-            <p class="text-sm">Option B: 25% (85)</p>
-            <p class="text-sm">Option C: 10% (34)</p>
-            <p class="text-sm">Option D: 5% (17)</p>
-          </div>
-          <!-- Repeat for other questions -->
+          <div class="mx-auto lg:ml-80">
+            <div class="container mx-auto py-8 px-4">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold">Survey Results</h2>
+                    <p class="text-sm text-gray-500">Overview of the survey results and insights</p>
+                </div>
+    
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold">Survey Title: <span class="font-medium">{{ survey_data.title }}</span></h3>
+                    <p class="text-sm text-gray-500">Date: {{ survey_data.date }}</p>
+                    <p class="text-sm text-gray-500">Description: {{ survey_data.description }}</p>
+                </div>
+    
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold">Summary</h3>
+                    <p class="text-sm">Participation Rate: {{ participation_rate }}%</p>
+                    <p class="text-sm">Total Respondents: {{ total_respondents }}</p>
+                    <p class="text-sm">Key Insights: {{ key_insights }}</p>
+                </div>
+    
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold">Detailed Results</h3>
+                    {% for question_id, responses in aggregated_results.items() %}
+                    <div class="my-4">
+                        <h4 class="text-md font-bold">{{ survey_data.questions[question_id].text }}</h4>
+                        <div class="bg-gray-100 p-4 rounded shadow-md">
+                            <!-- Placeholder for chart -->
+                            <img src="chart_placeholder.png" alt="Chart for Question {{ question_id }}">
+                        </div>
+                        {% for response, count in responses.items() %}
+                        <p class="text-sm">{{ survey_data.questions[question_id].options[response] }}: {{ count }} ({{ (count / total_responses[question_id] * 100)|round(2) }}%)</p>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+          {% endfor %}
         </div>
       
         <div class="mb-6">
@@ -192,6 +195,78 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="js/charts-demo.js"></script>
+
+    <div id="surveyResultsContainer"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const surveyId = urlParams.get('id');
+
+            if (surveyId) {
+                fetchSurveyResults(surveyId);
+            } else {
+                // Handle error - survey ID is missing
+            }
+        });
+
+        async function fetchSurveyResults(surveyId) {
+          try {
+            // Show loading indicator
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.classList.add('loading-indicator');
+            loadingIndicator.textContent = 'Loading survey results...';
+            document.body.appendChild(loadingIndicator);
+
+            const response = await axios.get(`/get-survey-results/${surveyId}`);
+            if (response.status === 200) {
+              const surveyResults = response.data;
+              displaySurveyResults(surveyResults);
+            } else {
+              console.error('Error fetching survey results:', response.status);
+              alert('Error fetching survey results. Please try again later.');
+            }
+          } catch (error) {
+            console.error('Network error:', error);
+            alert('Network error occurred. Please check your internet connection.');
+          } finally {
+            // Remove loading indicator
+            const loadingIndicator = document.querySelector('.loading-indicator');
+            if (loadingIndicator) {
+              loadingIndicator.remove();
+            }
+          }
+        }
+
+
+        function displaySurveyResults(surveyResults) {
+            const resultsContainer = document.getElementById('surveyResultsContainer');
+
+            // Clear any existing content
+            resultsContainer.innerHTML = '';
+
+            // Create and append elements to display the survey results
+            for (const questionId in surveyResults) {
+                const questionResultsDiv = document.createElement('div');
+                const questionText = document.createElement('h3');
+                questionText.textContent = `Question ${questionId}`;
+                questionResultsDiv.appendChild(questionText);
+
+                const optionsUl = document.createElement('ul');
+                for (const option in surveyResults[questionId]) {
+                    const optionLi = document.createElement('li');
+                    optionLi.textContent = `${option}: ${surveyResults[questionId][option]} responses`;
+                    optionsUl.appendChild(optionLi);
+                }
+                questionResultsDiv.appendChild(optionsUl);
+
+                resultsContainer.appendChild(questionResultsDiv);
+            }
+        }
+    </script>
+</body>
+</html>
+
 </body>
 </html>
 

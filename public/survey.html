@@ -18,18 +18,32 @@
         });
 
         async function fetchSurvey(surveyId) {
-            try {
-                // Fetch survey data from your backend (replace with your Replit API endpoint)
-                const response = await axios.get(`https://your-replit-app-name.username.repl.co/get-survey/${surveyId}`);
-                if (response.status === 200) {
-                    const surveyData = response.data;
-                    displaySurvey(surveyData);
-                } else {
-                    console.error('Error fetching survey:', response.status);
-                }
-            } catch (error) {
-                console.error('Network error:', error);
+        try {
+            // Show loading indicator
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.classList.add('loading-indicator');
+            loadingIndicator.textContent = 'Loading survey...';
+            document.body.appendChild(loadingIndicator);
+
+            // Fetch survey data from your backend
+            const response = await axios.get(`/get-survey/${surveyId}`);
+            if (response.status === 200) {
+            const surveyData = response.data;
+            displaySurvey(surveyData);
+            } else {
+            console.error('Error fetching survey:', response.status);
+            alert('Error fetching survey. Please try again later.');
             }
+        } catch (error) {
+            console.error('Network error:', error);
+            alert('Network error occurred. Please check your internet connection.');
+        } finally {
+            // Remove loading indicator
+            const loadingIndicator = document.querySelector('.loading-indicator');
+            if (loadingIndicator) {
+            loadingIndicator.remove();
+            }
+        }
         }
 
         function displaySurvey(surveyData) {
@@ -61,15 +75,30 @@
 
         async function submitResponse(surveyId, response) {
             try {
-                const response = await axios.post(`https://your-replit-app-name.username.repl.co/submit-response/${surveyId}`, { 
-                    response: response
-                });
-                // ... (Handle successful response submission) ...
-                // For now, let's redirect to the results page
-                window.location.href = 'survey_results.html';
+                // Show loading indicator
+                const loadingIndicator = document.createElement('div');
+                loadingIndicator.classList.add('loading-indicator');
+                loadingIndicator.textContent = 'Submitting response...';
+                document.body.appendChild(loadingIndicator);
 
+                const responseData = await axios.post(`/submit-response/${surveyId}`, {
+                response: response
+                });
+
+                // Handle successful response submission
+                alert('Response submitted successfully!');
+
+                // Redirect to the results page with the survey ID
+                window.location.href = `survey_results.html?id=${surveyId}`;
             } catch (error) {
-                // ... (Handle submission errors) ...
+                console.error('Error submitting response:', error);
+                alert('An error occurred while submitting the response. Please try again later.');
+            } finally {
+                // Remove loading indicator
+                const loadingIndicator = document.querySelector('.loading-indicator');
+                if (loadingIndicator) {
+                loadingIndicator.remove();
+                }
             }
         }
     </script>
