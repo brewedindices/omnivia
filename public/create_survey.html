@@ -482,6 +482,68 @@
           alert('Survey Submitted!');
       });
   });
+
+  // ... other code ... 
+
+const submitSurveyBtn = document.getElementById('submitSurveyBtn'); 
+submitButton.addEventListener('click', async (event) => {
+    event.preventDefault(); // Prevent default form submission
+
+    const surveyTitle = document.getElementById('surveyTitle').value;
+    const cohortId = document.getElementById('cohortId').value;
+    const numBots = document.getElementById('numBots').value;
+    // ... get other form data ...
+    const location = document.getElementById('location').value;
+
+    try {
+        const response = await axios.post('/create-survey', {
+            title: surveyTitle,
+            questions: getQuestionsFromTable(), // Function to get questions from table
+            cohortData: {
+                cohortId: cohortId,
+                numBots: numBots,
+                genderRatio: genderRatio,
+                minAge: minAge,
+                maxAge: maxAge,
+                minIncome: minIncome,
+                maxIncome: maxIncome,
+                locationType: locationType,
+                location: location,
+            } 
+        });
+
+        if (response.status === 200) {
+            const newSurveyId = response.data.surveyId;
+            // Redirect to the newly created survey or display a success message
+            alert("Survey created successfully!");
+            // window.location.href = `survey.html?id=${newSurveyId}`; 
+        } else {
+            console.error('Error creating survey:', response.status);
+            alert("Error creating survey. Please try again.");
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        alert("Network error occurred. Please check your internet connection.");
+    }
+});
+
+// Helper function to get questions from the question table
+function getQuestionsFromTable() {
+    const questionRows = document.querySelectorAll('#questionTable tbody tr');
+    const questions = [];
+
+    questionRows.forEach(row => {
+        const questionText = row.querySelector('td:nth-child(1) input').value;
+        const options = [
+            row.querySelector('td:nth-child(2) input').value,
+            row.querySelector('td:nth-child(3) input').value,
+            // ... get other options ...
+        ];
+        questions.push({ text: questionText, options: options });
+    });
+
+    return questions;
+}
 </script>
 
 </body>

@@ -134,40 +134,26 @@
       
           <div class="mx-auto lg:ml-80">
             <div class="container mx-auto py-8 px-4">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold">Survey Results</h2>
-                    <p class="text-sm text-gray-500">Overview of the survey results and insights</p>
-                </div>
-    
-                <div class="mb-6">
-                    <h3 class="text-xl font-bold">Survey Title: <span class="font-medium">{{ survey_data.title }}</span></h3>
-                    <p class="text-sm text-gray-500">Date: {{ survey_data.date }}</p>
-                    <p class="text-sm text-gray-500">Description: {{ survey_data.description }}</p>
-                </div>
-    
-                <div class="mb-6">
-                    <h3 class="text-lg font-bold">Summary</h3>
-                    <p class="text-sm">Participation Rate: {{ participation_rate }}%</p>
-                    <p class="text-sm">Total Respondents: {{ total_respondents }}</p>
-                    <p class="text-sm">Key Insights: {{ key_insights }}</p>
-                </div>
-    
-                <div class="mb-6">
-                    <h3 class="text-lg font-bold">Detailed Results</h3>
-                    {% for question_id, responses in aggregated_results.items() %}
-                    <div class="my-4">
-                        <h4 class="text-md font-bold">{{ survey_data.questions[question_id].text }}</h4>
-                        <div class="bg-gray-100 p-4 rounded shadow-md">
-                            <!-- Placeholder for chart -->
-                            <img src="chart_placeholder.png" alt="Chart for Question {{ question_id }}">
-                        </div>
-                        {% for response, count in responses.items() %}
-                        <p class="text-sm">{{ survey_data.questions[question_id].options[response] }}: {{ count }} ({{ (count / total_responses[question_id] * 100)|round(2) }}%)</p>
-                        {% endfor %}
-                    </div>
-                    {% endfor %}
-                </div>
-          {% endfor %}
+              <div class="mb-6">
+                  <h2 class="text-2xl font-bold">Survey Results</h2>
+                  <p class="text-sm text-gray-500">Overview of the survey results and insights</p>
+              </div>
+              <button id="viewAllSurveysBtn">View All Survey Activity</button> 
+              <div id="surveyHistoryModal" class="hidden"> <div class="modal-content">
+                   <span class="close-modal">×</span>
+                   <h2 class="text-lg font-bold">Your Survey Activity</h2>
+                   <ul id="surveyList"> </ul>
+                  </div>
+              </div>
+              <div id="surveyResultsContainer"> 
+                  <div id="surveyInfo">
+                      <h3 class="text-xl font-bold">Survey Title: <span id="surveyTitle"></span></h3>
+                      <p class="text-sm text-gray-500">Date: <span id="surveyDate"></span></p> 
+                  </div>
+                  <div id="surveySummary"> </div>
+                  <div id="detailedResults"> </div>
+              </div>
+          </div>
         </div>
       
         <div class="mb-6">

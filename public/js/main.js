@@ -1,5 +1,149 @@
 // Burger menus
 
+const { db } = require('replit');
+
+const express = require('express');
+const app = express();
+const { db } = require('replit'); // Import Replit DB
+
+app.use(express.json()); // Enable parsing JSON request bodies
+
+// Helper function to generate unique survey IDs
+function generateSurveyId() {
+  return 'survey_' + Math.random().toString(36).substring(2, 15);
+}
+
+// API endpoint to create a new survey
+app.post('/create-survey', async (req, res) => {
+  try {
+    const surveyId = generateSurveyId(); 
+    const surveyData = {
+      surveyId: surveyId, 
+      title: req.body.title,
+      questions: req.body.questions,
+      cohortData: req.body.cohortData, 
+      createdAt: Date.now(), // Timestamp for sorting
+      responses: [] // Initialize an empty array for responses
+    };
+
+    db[surveyId] = surveyData; 
+
+    res.status(200).json({ surveyId: surveyId }); 
+  } catch (error) {
+    console.error('Error creating survey:', error);
+    res.status(500).json({ error: 'Failed to create survey.' });
+  }
+});
+
+// API endpoint to get all surveys for the user (you'll likely need user authentication in the future)
+app.get('/get-surveys', async (req, res) => {
+  try {
+    // Assuming you have user authentication and can get userId
+    const userId = req.user.id; // Replace with your auth logic
+    const userSurveys = Object.values(db).filter(survey => survey.userId === userId);
+    // Sort surveys by createdAt (most recent first)
+    userSurveys.sort((a, b) => b.createdAt - a.createdAt); 
+    res.status(200).json(userSurveys);
+  } catch (error) {
+    console.error('Error fetching surveys:', error);
+    res.status(500).json({ error: 'Failed to fetch surveys.' });
+  }
+});
+
+// API endpoint to get a specific survey by ID
+app.get('/get-survey/:surveyId', async (req, res) => {
+  try {
+    const surveyId = req.params.surveyId;
+    const surveyData = db[surveyId];
+    if (!surveyData) {
+      return res.status(404).json({ error: 'Survey not found.' });
+    }
+    res.status(200).json(surveyData);
+  } catch (error) {
+    console.error('Error fetching survey:', error);
+    res.status(500).json({ error: 'Failed to fetch survey.' });
+  }
+});
+
+// API endpoint to submit a survey response
+app.post('/submit-response/:surveyId', async (req, res) => {
+  try {
+    const surveyId = req.params.surveyId;
+    const response = req.body.response; 
+    
+    const surveyData = db[surveyId]; 
+
+    if (!surveyData) {
+      return res.status(404).json({ error: 'Survey not found.' });
+    }
+
+    surveyData.responses.push({
+      answer: response,
+      createdAt: Date.now() 
+    });
+
+    db[surveyId] = surveyData; // Update the survey in the database
+
+    res.status(200).json({ message: 'Response submitted successfully.' });
+  } catch (error) {
+    console.error('Error submitting response:', error);
+    res.status(500).json({ error: 'Failed to submit response.' });
+  }
+});
+
+// API endpoint to get survey results
+app.get('/get-survey-results/:surveyId', async (req, res) => {
+  try {
+    const surveyId = req.params.surveyId;
+    const surveyData = db[surveyId];
+    if (!surveyData) {
+      return res.status(404).json({ error: 'Survey not found.' });
+    }
+
+    // Calculate and aggregate results 
+    const aggregatedResults = {};
+    const totalResponses = {}; // Tracks total responses for each question
+
+    surveyData.questions.forEach((question, questionIndex) => {
+      aggregatedResults[questionIndex] = {}; // Initialize for each question
+      totalResponses[questionIndex] = 0; 
+
+      question.options.forEach((option, optionIndex) => {
+        aggregatedResults[questionIndex][optionIndex] = 0; // Initialize each option count
+      });
+
+      surveyData.responses.forEach(response => {
+        const chosenOptionIndex = question.options.indexOf(response.answer); 
+        if (chosenOptionIndex !== -1) {
+          aggregatedResults[questionIndex][chosenOptionIndex]++;
+          totalResponses[questionIndex]++;
+        }
+      });
+    });
+
+    // Example basic insights (you can expand on this)
+    let keyInsights = 'No significant insights yet.';
+    // ... Add your logic to generate more meaningful insights based on aggregatedResults ...
+
+    // Calculate participation rate
+    const estimatedCohortSize = surveyData.cohortData.numBots; // Replace with your cohort estimation logic
+    const participationRate = (totalResponses[0] / estimatedCohortSize) * 100; 
+
+    res.status(200).json({
+      surveyData: surveyData, 
+      aggregatedResults: aggregatedResults,
+      totalResponses: totalResponses,
+      participationRate: participationRate.toFixed(2), 
+      keyInsights: keyInsights
+    });
+
+  } catch (error) {
+    console.error('Error getting survey results:', error);
+    res.status(500).json({ error: 'Failed to get survey results.' });
+  }
+});
+
+
 document.addEventListener('DOMContentLoaded', function() {
   const questionTable = document.getElementById('questionTable').getElementsByTagName('tbody')[0];
   const addQuestionBtn = document.getElementById('addQuestionBtn');
@@ -313,3 +457,7 @@ function saveSurvey() {
 }
 
 document.querySelector('.submit-survey-btn').addEventListener('click', saveSurvey);
+
+app.listen(3000, () => {
+  console.log('Server listening on port 3000');
+}); 
