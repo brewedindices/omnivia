@@ -1,4 +1,67 @@
 // Burger menus
+
+document.addEventListener('DOMContentLoaded', function() {
+  const questionTable = document.getElementById('questionTable').getElementsByTagName('tbody')[0];
+  const addQuestionBtn = document.getElementById('addQuestionBtn');
+  const questionRowTemplate = document.querySelector('.question-row');
+
+  addQuestionBtn.addEventListener('click', function() {
+    const newRow = document.createElement('tr');
+    newRow.classList.add('bg-white', 'question-row');
+    newRow.innerHTML = `
+      <td class="px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+        <input type="text" class="border rounded-md p-2 w-full" placeholder="Enter question">
+      </td>
+      <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+        <input type="text" class="border rounded-md p-2 w-full" placeholder="Option A">
+      </td>
+      <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+        <input type="text" class="border rounded-md p-2 w-full" placeholder="Option B">
+      </td>
+      <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+        <input type="text" class="border rounded-md p-2 w-full" placeholder="Option C">
+      </td>
+      <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+        <input type="text" class="border rounded-md p-2 w-full" placeholder="Option D">
+      </td>
+      <td class="px-2 py-4 text-right">
+        <button class="text-red-500 hover:text-red-700 focus:outline-none remove-row-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewbox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 011.414 0L10 8.586l4.293-4.293a1 1 111.414 1.414L11.414 10l4.293 4.293a1 1 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 01-1.414-1.414L8.586 10 4.293 5.707a1 1 010-1.414z" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+      </td>
+    `;
+
+    questionTable.querySelector('tbody').appendChild(newRow);
+    attachRemoveEvent(newRow.querySelector('.remove-row-btn'));
+  });
+
+  function attachRemoveEvent(button) {
+    button.addEventListener('click', function() {
+      const row = this.closest('tr');
+      row.remove();
+    });
+  }
+
+  // Attach the remove event to existing rows
+  document.querySelectorAll('.remove-row-btn').forEach(button => {
+    attachRemoveEvent(button);
+
+  function addQuestionRow() {
+      const newRow = questionRowTemplate.cloneNode(true);
+      const removeBtn = newRow.querySelector('.remove-row-btn');
+      removeBtn.classList.remove('hidden');
+      newRow.querySelector('input[placeholder="Enter question"]').value = '';
+      removeBtn.addEventListener('click', function() {
+          questionTable.removeChild(newRow);
+      });
+      questionTable.appendChild(newRow);
+  }
+
+  addQuestionBtn.addEventListener('click', addQuestionRow);
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     // open
     const burger = document.querySelectorAll('.navbar-burger');
@@ -214,3 +277,39 @@ function updateRemainingAgents() {
 document.addEventListener('DOMContentLoaded', function() {
   updateRemainingAgents();
 });
+
+let surveys = [];
+
+function saveSurvey() {
+  const surveyTitle = document.getElementById('surveyTitle').value;
+  const questions = Array.from(document.querySelectorAll('.question-row')).map(row => ({
+    text: row.querySelector('input[type="text"]').value,
+    options: Array.from(row.querySelectorAll('input[type="text"]:not(:first-child)')).map(input => input.value)
+  }));
+  const cohortId = document.getElementById('cohortId').value;
+  const genderRatio = genderRatioSlider.noUiSlider.get();
+  const ageRange = ageRangeSlider.noUiSlider.get();
+  const incomeRange = incomeRangeSlider.noUiSlider.get();
+  const locationType = document.getElementById('locationType').value;
+  const location = Array.from(document.getElementById('location').options)
+                        .filter(option => option.selected)
+                        .map(option => option.value);
+
+  const survey = {
+    title: surveyTitle,
+    questions,
+    demographics: {
+      cohortId,
+      genderRatio,
+      ageRange,
+      incomeRange,
+      locationType,
+      location
+    }
+  };
+
+  surveys.push(survey);
+  localStorage.setItem('surveys', JSON.stringify(surveys));
+}
+
+document.querySelector('.submit-survey-btn').addEventListener('click', saveSurvey);
