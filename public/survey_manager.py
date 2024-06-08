@@ -224,22 +224,23 @@ def create_survey():
     survey_id = str(uuid.uuid4())
 
     # Store the survey data in Replit Database
-    db[f'survey_{survey_id}'] = {
+    survey_data = {
         'title': title,
         'questions': questions,
         'cohortData': cohort_data,
         'responses': {}  # Initialize an empty dictionary to store responses
     }
-
-    survey_data = {
-        'title': request.json['title'],
-        'questions': request.json['questions'],
-        'cohortData': request.json['cohortData']
-    }
-    survey_id = str(uuid.uuid4())  # Generate a unique survey ID
     db[survey_id] = json.dumps(survey_data)  # Store survey data in Replit DB
 
-    return jsonify({'surveyId': survey_id, 'surveyLink': survey_link})
+    # Create survey link (assuming you have a survey link format)
+    survey_link = f'/survey/{survey_id}'
+
+    # Return the new survey ID and survey link
+    return jsonify({'surveyId': survey_id, 'surveyLink': survey_link}), 200
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+
 
 @app.route('/run-survey/<survey_id>', methods=['POST'])
 def run_survey(survey_id):

@@ -539,5 +539,105 @@ function getQuestionsFromTable() {
 }
 </script>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Function to add a new question row
+    function addQuestion() {
+      const questionTable = document.getElementById('questionTable').getElementsByTagName('tbody')[0];
+      const newRow = document.createElement('tr');
+      newRow.className = 'bg-white question-row';
+      newRow.innerHTML = `
+        <td class="px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+          <input type="text" class="border rounded-md p-2 w-full" placeholder="Enter question">
+        </td>
+        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+          <input type="text" class="border rounded-md p-2 w-full" placeholder="Option A">
+        </td>
+        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+          <input type="text" class="border rounded-md p-2 w-full" placeholder="Option B">
+        </td>
+        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+          <input type="text" class="border rounded-md p-2 w-full" placeholder="Option C">
+        </td>
+        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+          <input type="text" class="border rounded-md p-2 w-full" placeholder="Option D">
+        </td>
+        <td class="px-2 py-4 text-right">
+          <button class="text-red-500 hover:text-red-700 focus:outline-none remove-row-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 111.414 1.414L11.414 10l4.293 4.293a1 1 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 01-1.414-1.414L8.586 10 4.293 5.707a1 1 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </td>
+      `;
+      questionTable.appendChild(newRow);
+      attachRemoveHandlers();
+    }
+
+    // Function to remove a question row
+    function removeQuestion(event) {
+      const button = event.currentTarget;
+      button.closest('tr').remove();
+    }
+
+    // Attach event handlers to remove buttons
+    function attachRemoveHandlers() {
+      const removeButtons = document.querySelectorAll('.remove-row-btn');
+      removeButtons.forEach(button => {
+        button.removeEventListener('click', removeQuestion); // Remove previous event listeners to prevent duplicates
+        button.addEventListener('click', removeQuestion);
+      });
+    }
+
+    // Initial attachment of remove handlers
+    attachRemoveHandlers();
+
+    // Add question button event handler
+    const addQuestionBtn = document.getElementById('addQuestionBtn');
+    addQuestionBtn.addEventListener('click', addQuestion);
+
+    // Submit survey button event handler
+    const submitSurveyBtn = document.querySelector('.submit-survey-btn');
+    submitSurveyBtn.addEventListener('click', function(event) {
+      event.preventDefault();
+      submitSurvey();
+    });
+
+    // Function to submit survey
+    function submitSurvey() {
+      const surveyTitle = document.getElementById('surveyTitle').value;
+      const questions = [];
+      document.querySelectorAll('.question-row').forEach(row => {
+        const question = row.querySelector('input[placeholder="Enter question"]').value;
+        const optionA = row.querySelector('input[placeholder="Option A"]').value;
+        const optionB = row.querySelector('input[placeholder="Option B"]').value;
+        const optionC = row.querySelector('input[placeholder="Option C"]').value;
+        const optionD = row.querySelector('input[placeholder="Option D"]').value;
+        questions.push({ question, options: [optionA, optionB, optionC, optionD] });
+      });
+
+      const cohortData = {
+        cohortId: document.getElementById('cohortId').value,
+        genderRatio: document.querySelector('.malePercentage').innerText,
+        ageRange: [document.querySelector('.ageMinLabel').innerText, document.querySelector('.ageMaxLabel').innerText],
+        incomeRange: [document.querySelector('.incomeMinLabel').innerText, document.querySelector('.incomeMaxLabel').innerText],
+        locationType: document.getElementById('locationType').value,
+        location: Array.from(document.getElementById('location').selectedOptions).map(option => option.value)
+      };
+
+      const surveyData = { title: surveyTitle, questions, cohortData };
+
+      axios.post('/create-survey', surveyData)
+        .then(response => {
+          alert('Survey submitted successfully!');
+        })
+        .catch(error => {
+          console.error('Error submitting survey:', error);
+        });
+    }
+  });
+</script>
+
+
 </body>
 </html>
