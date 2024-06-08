@@ -7,6 +7,7 @@ import math
 import random
 from flask import Flask, request, jsonify
 from replit import db  # Import Replit Database
+import json
 from datetime import datetime
 from flask import Flask, request, jsonify
 import string
@@ -114,10 +115,23 @@ def record_response(survey_id, response_data, persona_id=None):
 
 def aggregate_responses(survey_id):
     """Aggregates responses for a given survey."""
+    @app.route('/get-survey/<survey_id>', methods=['GET'])
+    def get_survey(survey_id):
+        if survey_id in db:
+            survey_data_json = db[survey_id]  # Retrieve survey data as JSON string
+            survey_data = json.loads(survey_data_json)  # Convert JSON string to Python dict
+            return jsonify(survey_data)  
+        else:
+            return jsonify({'error': 'Survey not found'}), 404 
+    
     @app.route('/get-survey-results/<survey_id>', methods=['GET'])
     def get_survey_results(survey_id):
-        aggregated_responses = aggregate_responses(survey_id)
-        return jsonify(aggregated_responses)
+        if f'results-{survey_id}' in db:
+            survey_results_json = db[f'results-{survey_id}']
+            survey_results = json.loads(survey_results_json)
+            return jsonify(survey_results)
+        else:
+            return jsonify({'error': 'Results not found for this survey'}), 404
 
     
     responses = db.prefix(f"response_{survey_id}_")
@@ -217,8 +231,15 @@ def create_survey():
         'responses': {}  # Initialize an empty dictionary to store responses
     }
 
-    # Return the new survey ID
-    return jsonify({'surveyId': survey_id}), 200
+    survey_data = {
+        'title': request.json['title'],
+        'questions': request.json['questions'],
+        'cohortData': request.json['cohortData']
+    }
+    survey_id = str(uuid.uuid4())  # Generate a unique survey ID
+    db[survey_id] = json.dumps(survey_data)  # Store survey data in Replit DB
+
+    return jsonify({'surveyId': survey_id, 'surveyLink': survey_link})
 
 @app.route('/run-survey/<survey_id>', methods=['POST'])
 def run_survey(survey_id):
@@ -278,16 +299,26 @@ def run_survey(survey_id):
     return jsonify({'message': 'Survey simulated successfully', 'personas': personas})
 
 @app.route('/submit-response/<survey_id>', methods=['POST'])
-def submit_response_endpoint(survey_id):
-    response_data = request.get_json()
-    persona_id = response_data.get('persona_id')
-    if persona_id:
-        db[f'survey_{survey_id}']['responses'][persona_id] = response_data
+def submit_response(survey_id):
+    if survey_id in db:
+        response = request.json['response']
+        
+        # Get existing results or initialize an empty dictionary
+        survey_results = json.loads(db.get(f'results-{survey_id}', '{}'))  
+        
+        for i, question in enumerate(json.loads(db[survey_id])['questions']): 
+            question_key = f"question-{i+1}"
+            if question_key not in survey_results:
+                survey_results[question_key] = {}
+            if response in survey_results[question_key]:
+                survey_results[question_key][response] += 1
+            else:
+                survey_results[question_key][response] = 1
+        
+        db[f'results-{survey_id}'] = json.dumps(survey_results)
+        return jsonify({'message': 'Response recorded'})
     else:
-        db[f'survey_{survey_id}']['responses'].append(response_data)  # Handle cases without persona_id
-
-    # Return a simple acknowledgment for the user
-    return jsonify({'message': 'Response submitted successfully!'})
+        return jsonify({'error': 'Survey not found'}), 404 
 
 @app.route('/get-remaining-agents', methods=['GET'])
 def get_remaining_agents():

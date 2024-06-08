@@ -185,72 +185,72 @@
 
     <div id="surveyResultsContainer"></div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const surveyId = urlParams.get('id');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const surveyId = urlParams.get('id');
 
-            if (surveyId) {
-                fetchSurveyResults(surveyId);
-            } else {
-                // Handle error - survey ID is missing
-            }
-        });
-
-        async function fetchSurveyResults(surveyId) {
-          try {
-            // Show loading indicator
-            const loadingIndicator = document.createElement('div');
-            loadingIndicator.classList.add('loading-indicator');
-            loadingIndicator.textContent = 'Loading survey results...';
-            document.body.appendChild(loadingIndicator);
-
-            const response = await axios.get(`/get-survey-results/${surveyId}`);
-            if (response.status === 200) {
-              const surveyResults = response.data;
-              displaySurveyResults(surveyResults);
-            } else {
-              console.error('Error fetching survey results:', response.status);
-              alert('Error fetching survey results. Please try again later.');
-            }
-          } catch (error) {
-            console.error('Network error:', error);
-            alert('Network error occurred. Please check your internet connection.');
-          } finally {
-            // Remove loading indicator
-            const loadingIndicator = document.querySelector('.loading-indicator');
-            if (loadingIndicator) {
-              loadingIndicator.remove();
-            }
-          }
+        if (surveyId) {
+            fetchSurveyResults(surveyId);
+        } else {
+            // Handle error - survey ID is missing
         }
+    });
 
+    async function fetchSurveyResults(surveyId) {
+      try {
+        // Show loading indicator
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.classList.add('loading-indicator');
+        loadingIndicator.textContent = 'Loading survey results...';
+        document.body.appendChild(loadingIndicator);
 
-        function displaySurveyResults(surveyResults) {
-            const resultsContainer = document.getElementById('surveyResultsContainer');
-
-            // Clear any existing content
-            resultsContainer.innerHTML = '';
-
-            // Create and append elements to display the survey results
-            for (const questionId in surveyResults) {
-                const questionResultsDiv = document.createElement('div');
-                const questionText = document.createElement('h3');
-                questionText.textContent = `Question ${questionId}`;
-                questionResultsDiv.appendChild(questionText);
-
-                const optionsUl = document.createElement('ul');
-                for (const option in surveyResults[questionId]) {
-                    const optionLi = document.createElement('li');
-                    optionLi.textContent = `${option}: ${surveyResults[questionId][option]} responses`;
-                    optionsUl.appendChild(optionLi);
-                }
-                questionResultsDiv.appendChild(optionsUl);
-
-                resultsContainer.appendChild(questionResultsDiv);
-            }
+        const response = await axios.get(`/get-survey-results/${surveyId}`);
+        if (response.status === 200) {
+          const surveyResults = response.data;
+          displaySurveyResults(surveyResults);
+        } else {
+          console.error('Error fetching survey results:', response.status);
+          alert('Error fetching survey results. Please try again later.');
         }
-    </script>
+      } catch (error) {
+        console.error('Network error:', error);
+        alert('Network error occurred. Please check your internet connection.');
+      } finally {
+        // Remove loading indicator
+        const loadingIndicator = document.querySelector('.loading-indicator');
+        if (loadingIndicator) {
+          loadingIndicator.remove();
+        }
+      }
+    }
+
+
+    function displaySurveyResults(surveyResults) {
+        const resultsContainer = document.getElementById('surveyResultsContainer');
+
+        // Clear any existing content
+        resultsContainer.innerHTML = '';
+
+        // Create and append elements to display the survey results
+        for (const questionId in surveyResults) {
+            const questionResultsDiv = document.createElement('div');
+            const questionText = document.createElement('h3');
+            questionText.textContent = `Question ${questionId}`;
+            questionResultsDiv.appendChild(questionText);
+
+            const optionsUl = document.createElement('ul');
+            for (const option in surveyResults[questionId]) {
+                const optionLi = document.createElement('li');
+                optionLi.textContent = `${option}: ${surveyResults[questionId][option]} responses`;
+                optionsUl.appendChild(optionLi);
+            }
+            questionResultsDiv.appendChild(optionsUl);
+
+            resultsContainer.appendChild(questionResultsDiv);
+        }
+    }
+</script>
 </body>
 </html>
 
