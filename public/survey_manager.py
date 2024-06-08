@@ -7,52 +7,25 @@ import math
 import random
 from flask import Flask, request, jsonify
 from replit import db  # Import Replit Database
-import json
 from datetime import datetime
-from flask import Flask, request, jsonify
-import string
 
 app = Flask(__name__)
 
-from flask import Flask, request, jsonify
-import random
-import string
+# Environment variables for Groq API Key, model, and base URL
+os.environ["OPENAI_API_BASE"] = "https://api.groq.com/openai/v1/chat/completions"
+os.environ["OPENAI_MODEL_NAME"] = "llama3-8b-8192"
+os.environ["OPENAI_API_KEY"] = "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"
 
-
-# Dictionary to store subscription tiers and their max AI agents
+# Subscription tiers and user subscriptions
 subscription_tiers = {
     'basic': 10,
     'standard': 50,
     'premium': 100
 }
 
-# Dictionary to store user subscription information
 user_subscriptions = {}
 
-# Route to handle survey submission
-@app.route('/create_survey', methods=['POST'])
-def submit_survey():
-    # Get survey data from request
-    survey_data = request.get_json()
-
-    # Save survey data to database
-    db[str(datetime.now())] = survey_data
-
-    return jsonify({'message': 'Survey submitted successfully'})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
-
-
-app = Flask(__name__)
-
-# ... (Groq API Key, model, and base URL go here) ...
-os.environ["OPENAI_API_BASE"] = "https://api.groq.com/openai/v1/chat/completions"
-os.environ["OPENAI_MODEL_NAME"] = "llama3-8b-8192"
-os.environ["OPENAI_API_KEY"] = "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"
-
 # --- Persona Generation ---
-
 def create_personas(cohort_demographics, num_personas):
     """Creates a list of personas based on cohort demographics."""
     personas = []
@@ -63,7 +36,6 @@ def create_personas(cohort_demographics, num_personas):
             'age': random.randint(cohort_demographics['ageRange'][0], cohort_demographics['ageRange'][1]),
             'gender': random.choices(['Male', 'Female'], weights=[cohort_demographics['genderRatio'] / 100, 1 - (cohort_demographics['genderRatio'] / 100)])[0],
             'income': random.randint(cohort_demographics['incomeMin'], cohort_demographics['incomeMax']),
-            # ... (Add other demographics as needed)
         }
         personas.append(persona)
     return personas
@@ -77,13 +49,9 @@ def create_persona_backstory(persona, survey_question):
     return backstory
 
 # --- Survey Management Functions ---
-
 def create_survey(survey_data):
-    """
-    Stores the submitted survey data in the database. 
-    Generates a unique survey ID.
-    """
-    survey_id = str(random.randint(10000, 99999)) # Simple unique ID generation
+    """Stores the submitted survey data in the database and generates a unique survey ID."""
+    survey_id = str(random.randint(10000, 99999))  # Simple unique ID generation
     db[survey_id] = survey_data 
     return survey_id
 
@@ -92,16 +60,7 @@ def get_survey(survey_id):
     return db.get(survey_id)
 
 def record_response(survey_id, response_data, persona_id=None):
-    """
-    Stores a user's response to a survey in the database.
-    
-    Args:
-        survey_id (str): The unique identifier of the survey.
-        response_data (dict): A dictionary containing the response data.
-        persona_id (str, optional): The unique identifier of the persona associated with the response.
-            If provided, the response will be associated with the specified persona.
-            If not provided, the response will be recorded without a persona association.
-    """
+    """Stores a user's response to a survey in the database."""
     timestamp = datetime.now().isoformat()
     response_key = f"response_{survey_id}_{persona_id}_{response_data['questionId']}"
     response = {
@@ -115,25 +74,6 @@ def record_response(survey_id, response_data, persona_id=None):
 
 def aggregate_responses(survey_id):
     """Aggregates responses for a given survey."""
-    @app.route('/get-survey/<survey_id>', methods=['GET'])
-    def get_survey(survey_id):
-        if survey_id in db:
-            survey_data_json = db[survey_id]  # Retrieve survey data as JSON string
-            survey_data = json.loads(survey_data_json)  # Convert JSON string to Python dict
-            return jsonify(survey_data)  
-        else:
-            return jsonify({'error': 'Survey not found'}), 404 
-    
-    @app.route('/get-survey-results/<survey_id>', methods=['GET'])
-    def get_survey_results(survey_id):
-        if f'results-{survey_id}' in db:
-            survey_results_json = db[f'results-{survey_id}']
-            survey_results = json.loads(survey_results_json)
-            return jsonify(survey_results)
-        else:
-            return jsonify({'error': 'Results not found for this survey'}), 404
-
-    
     responses = db.prefix(f"response_{survey_id}_")
     aggregated_responses = {}
 
@@ -151,9 +91,7 @@ def aggregate_responses(survey_id):
 
     return aggregated_responses
 
-
 # ---  CrewAI Agents and Tasks ---
-
 # Define the Ticket Classifier Agent
 classifier = Agent(
     role="Survey Classifier",
@@ -174,26 +112,20 @@ action_taker = Agent(
 
 # Placeholder function to get the user's ID
 def get_user_id():
-    # Replace this with your actual logic to retrieve the user's ID
     return 'user_123'  # Example user ID
 
 # Placeholder function to get the user's remaining AI agents
 def get_user_remaining_agents(user_id):
-    # Replace this with your actual logic to retrieve the user's remaining AI agents from the database
-    # For now, we'll return a hardcoded value
     return 50  # Example remaining AI agents
 
-# Function definitions
 def process_response(survey_question, options, response, persona_backstory):
     """Process a single survey response using CrewAI."""
-    # Define the Task: Classify the Survey Response
     classify_survey_response = Task(
         description=f"Classify the following survey response for '{survey_question}' with options: {', '.join(options)} \r\nRespond with the option letter only (A, B, C, or D).",
         agent=classifier,
         expected_output="One of the following options: 'A', 'B', 'C', or 'D'"
     )
 
-    # Define the Task: Record and Tally the Survey Response
     record_survey_response = Task(
         description=f"""The response was classified as option {classify_survey_response.output}.
         Record this response for the persona with the following backstory: {persona_backstory} and maintain a running tally.""",
@@ -201,7 +133,6 @@ def process_response(survey_question, options, response, persona_backstory):
         expected_output="A record of the survey response and a running tally of the responses."
     )
 
-    # Create the Crew
     crew = Crew(
         agents=[classifier, action_taker],
         tasks=[classify_survey_response, record_survey_response],
@@ -211,53 +142,25 @@ def process_response(survey_question, options, response, persona_backstory):
 
     return crew.execute(inputs={'response': response})
 
-# --- API Endpoints ---
-
+# --- API Endpoints --- 
 @app.route('/create-survey', methods=['POST'])
-def create_survey():
-    data = request.get_json()
-    title = data.get('title')
-    questions = data.get('questions')
-    cohort_data = data.get('cohortData')
-
-    # Generate a unique ID for the survey
-    survey_id = str(uuid.uuid4())
-
-    # Store the survey data in Replit Database
-    survey_data = {
-        'title': title,
-        'questions': questions,
-        'cohortData': cohort_data,
-        'responses': {}  # Initialize an empty dictionary to store responses
-    }
-    db[survey_id] = json.dumps(survey_data)  # Store survey data in Replit DB
-
-    # Create survey link (assuming you have a survey link format)
-    survey_link = f'/survey/{survey_id}'
-
-    # Return the new survey ID and survey link
-    return jsonify({'surveyId': survey_id, 'surveyLink': survey_link}), 200
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
-
+def create_survey_endpoint():
+    survey_data = request.get_json()
+    survey_id = create_survey(survey_data)
+    return jsonify({'survey_id': survey_id})
 
 @app.route('/run-survey/<survey_id>', methods=['POST'])
 def run_survey(survey_id):
     data = request.get_json()
     num_bots = int(data.get("num_bots", 10))
+    survey_data = data.get("surveyData")
 
-    # Get the user's ID
     user_id = get_user_id()
-
-    # For now, we'll assume a hardcoded subscription limit
     max_bots_allowed = 100  # Example subscription limit
 
-    # Check if the requested number of bots exceeds the user's subscription limit
     if num_bots > max_bots_allowed:
         return jsonify({'error': 'Requested number of AI agents exceeds your subscription limit.'}), 400
 
-    # Update the user's remaining AI agents in the database
     update_user_remaining_agents(user_id, num_bots)
 
     bot_responses = {}
@@ -265,24 +168,18 @@ def run_survey(survey_id):
     batch_size = MAX_CONCURRENT_THREADS
     num_batches = math.ceil(num_bots / batch_size)
 
-    # Get the survey from the database
-    survey_data = db[f'survey_{survey_id}']
+    survey_data = get_survey(survey_id)
     survey_question = survey_data['questions'][0]['text']
     options = survey_data['questions'][0]['options']
 
-    # Create personas based on the cohort demographics from survey data
-    personas = create_personas(survey_data['cohortData'], num_bots)
+    personas = create_personas(survey_data['cohort'], num_bots)
 
     def execute_crew_for_bot(persona):
-        # Choose a random response
         response = random.choice(options)
-        # Create a persona backstory
         backstory = create_persona_backstory(persona, survey_question)
-        # Process the response using CrewAI
         result = process_response(survey_question, options, response, backstory)
         return persona['id'], result
 
-    # Execute the Crew for each bot with personas in batches
     for batch_num in range(num_batches):
         start_index = batch_num * batch_size
         end_index = min(start_index + batch_size, num_bots)
@@ -292,44 +189,28 @@ def run_survey(survey_id):
             futures = [executor.submit(execute_crew_for_bot, persona) for persona in personas_batch]
             for future in tqdm(concurrent.futures.as_completed(futures), total=len(personas_batch), unit="bot", desc=f"Processing batch {batch_num+1}/{num_batches}"):
                 persona_id, result = future.result()
-                # Record response, associating it with the persona ID
-                db[f'survey_{survey_id}']['responses'][persona_id] = result
+                record_response(survey_id, {'response': result['response']}, persona_id)
 
         time.sleep(1)  
 
     return jsonify({'message': 'Survey simulated successfully', 'personas': personas})
 
 @app.route('/submit-response/<survey_id>', methods=['POST'])
-def submit_response(survey_id):
-    if survey_id in db:
-        response = request.json['response']
-        
-        # Get existing results or initialize an empty dictionary
-        survey_results = json.loads(db.get(f'results-{survey_id}', '{}'))  
-        
-        for i, question in enumerate(json.loads(db[survey_id])['questions']): 
-            question_key = f"question-{i+1}"
-            if question_key not in survey_results:
-                survey_results[question_key] = {}
-            if response in survey_results[question_key]:
-                survey_results[question_key][response] += 1
-            else:
-                survey_results[question_key][response] = 1
-        
-        db[f'results-{survey_id}'] = json.dumps(survey_results)
-        return jsonify({'message': 'Response recorded'})
-    else:
-        return jsonify({'error': 'Survey not found'}), 404 
+def submit_response_endpoint(survey_id):
+    response_data = request.get_json()
+    record_response(survey_id, response_data)  # No need to pass persona_id here
+    return jsonify({'message': 'Response submitted successfully!'})
 
 @app.route('/get-remaining-agents', methods=['GET'])
 def get_remaining_agents():
-    # Get the user's ID
     user_id = get_user_id()
-
-    # Retrieve the user's remaining AI agents from the database
     remaining_agents = get_user_remaining_agents(user_id)
-
     return jsonify({'remaining_agents': remaining_agents})
+
+@app.route('/get-survey-results/<survey_id>', methods=['GET'])
+def get_survey_results(survey_id):
+    aggregated_responses = aggregate_responses(survey_id)
+    return jsonify(aggregated_responses)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

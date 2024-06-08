@@ -506,10 +506,10 @@
                   </div>
 
                   <div class="flex items-center justify-end">
-                    <button class="submit-survey-btn mt-4 w-auto py-2 px-3 text-xs text-white" style="background-color: #015df4;" id="submitSurveyBtn">
+                    <button id="submitSurveyBtn" class="submit-survey-btn mt-4 w-auto py-2 px-3 text-xs text-white" style="background-color: #015df4;">
                       <span>Submit Survey</span>
                     </button>
-                  </div>                  
+                  </div>                                                  
                 </div>
               </div>
             </div>
@@ -599,72 +599,71 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-      const submitSurveyBtn = document.getElementById('submitSurveyBtn');
-  
-      submitSurveyBtn.addEventListener('click', async (event) => {
-          event.preventDefault(); 
-  
-          // Get values from form fields
-          const surveyTitle = document.getElementById('surveyTitle').value;
-          const cohortId = document.getElementById('cohortId').value;
-          const numBots = document.getElementById('numBots').value;
-          const genderRatio = document.getElementById('genderRatio').value;
-          const minAge = document.getElementById('minAge').value;
-          const maxAge = document.getElementById('maxAge').value;
-          const minIncome = document.getElementById('minIncome').value;
-          const maxIncome = document.getElementById('maxIncome').value;
-          const locationType = document.getElementById('locationType').value;
-          const location = document.getElementById('location').value;
-  
-          try {
-              const response = await axios.post('/create-survey', { 
-                  title: surveyTitle,
-                  questions: getQuestionsFromTable(), 
-                  cohortData: {
-                      cohortId: cohortId,
-                      numBots: numBots,
-                      genderRatio: genderRatio,
-                      minAge: minAge,
-                      maxAge: maxAge,
-                      minIncome: minIncome,
-                      maxIncome: maxIncome,
-                      locationType: locationType,
-                      location: location,
-                  }
-              });
-  
-              if (response.status === 200) {
-                  const newSurveyId = response.data.surveyId;
-                  alert("Survey created successfully!");
-                  // window.location.href = `survey.html?id=${newSurveyId}`; 
-              } else {
-                  console.error('Error creating survey:', response.status);
-                  alert("Error creating survey. Please try again.");
-              }
-          } catch (error) {
-              console.error('Network error:', error);
-              alert("Network error occurred. Please check your internet connection.");
+    const submitSurveyBtn = document.getElementById('submitSurveyBtn');
+
+    submitSurveyBtn.addEventListener('click', async (event) => {
+      event.preventDefault(); 
+
+      // Get values from form fields
+      const surveyTitle = document.getElementById('surveyTitle').value;
+      const cohortId = document.getElementById('cohortId').value;
+      const genderRatio = document.querySelector('.malePercentage').innerText;
+      const minAge = document.querySelector('.ageMinLabel').innerText;
+      const maxAge = document.querySelector('.ageMaxLabel').innerText;
+      const minIncome = document.querySelector('.incomeMinLabel').innerText;
+      const maxIncome = document.querySelector('.incomeMaxLabel').innerText;
+      const locationType = document.getElementById('locationType').value;
+      const location = Array.from(document.getElementById('location').selectedOptions).map(option => option.value);
+
+      try {
+        const response = await axios.post('/create-survey', { 
+          title: surveyTitle,
+          questions: getQuestionsFromTable(), 
+          cohortData: {
+            cohortId: cohortId,
+            genderRatio: genderRatio,
+            ageRange: [minAge, maxAge],
+            incomeRange: [minIncome, maxIncome],
+            locationType: locationType,
+            location: location,
           }
-      });
+        });
 
-// Helper function to get questions from the question table
-function getQuestionsFromTable() {
-    const questionRows = document.querySelectorAll('#questionTable tbody tr');
-    const questions = [];
-
-    questionRows.forEach(row => {
-        const questionText = row.querySelector('td:nth-child(1) input').value;
-        const options = [
-            row.querySelector('td:nth-child(2) input').value,
-            row.querySelector('td:nth-child(3) input').value,
-            // ... get other options ...
-        ];
-        questions.push({ text: questionText, options: options });
+        if (response.status === 200) {
+          alert("Survey created successfully!");
+          // Optionally redirect to survey page
+          // window.location.href = `survey.html?id=${response.data.surveyId}`;
+        } else {
+          console.error('Error creating survey:', response.status);
+          alert("Error creating survey. Please try again.");
+        }
+      } catch (error) {
+        console.error('Network error:', error);
+        alert("Network error occurred. Please check your internet connection.");
+      }
     });
 
-    return questions;
-}
+    // Helper function to get questions from the question table
+    function getQuestionsFromTable() {
+      const questionRows = document.querySelectorAll('#questionTable tbody tr');
+      const questions = [];
+
+      questionRows.forEach(row => {
+        const questionText = row.querySelector('td:nth-child(1) input').value;
+        const options = [
+          row.querySelector('td:nth-child(2) input').value,
+          row.querySelector('td:nth-child(3) input').value,
+          row.querySelector('td:nth-child(4) input').value,
+          row.querySelector('td:nth-child(5) input').value
+        ];
+        questions.push({ text: questionText, options: options });
+      });
+
+      return questions;
+    }
+  });
 </script>
+
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
