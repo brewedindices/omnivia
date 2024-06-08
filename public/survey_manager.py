@@ -169,7 +169,7 @@ def get_user_remaining_agents(user_id):
     # For now, we'll return a hardcoded value
     return 50  # Example remaining AI agents
 
-
+# Function definitions
 def process_response(survey_question, options, response, persona_backstory):
     """Process a single survey response using CrewAI."""
     # Define the Task: Classify the Survey Response
@@ -181,19 +181,12 @@ def process_response(survey_question, options, response, persona_backstory):
 
     # Define the Task: Record and Tally the Survey Response
     record_survey_response = Task(
-        description=f"The response was classified as option {classify_survey_response.output}. Record this response and maintain a running tally.",
-        agent=action_taker,
-        expected_output="A record of the survey response and a running tally of the responses."
-    )
-
-    # Update the Task: Record and Tally the Survey Response to include persona_id
-    record_survey_response = Task(
         description=f"""The response was classified as option {classify_survey_response.output}.
         Record this response for the persona with the following backstory: {persona_backstory} and maintain a running tally.""",
         agent=action_taker,
         expected_output="A record of the survey response and a running tally of the responses."
     )
-    
+
     # Create the Crew
     crew = Crew(
         agents=[classifier, action_taker],
@@ -204,91 +197,107 @@ def process_response(survey_question, options, response, persona_backstory):
 
     return crew.execute(inputs={'response': response})
 
-# --- API Endpoints --- 
+# --- API Endpoints ---
 
-    @app.route('/create-survey', methods=['POST'])
-    def create_survey_endpoint():
-        survey_data = request.get_json()
-        survey_id = create_survey(survey_data)
-        return jsonify({'survey_id': survey_id})
+@app.route('/create-survey', methods=['POST'])
+def create_survey():
+    data = request.get_json()
+    title = data.get('title')
+    questions = data.get('questions')
+    cohort_data = data.get('cohortData')
 
-    @app.route('/run-survey/<survey_id>', methods=['POST'])
-    def run_survey(survey_id):
-        data = request.get_json()
-        num_bots = int(data.get("num_bots", 10))
-        survey_data = data.get("surveyData")
+    # Generate a unique ID for the survey
+    survey_id = str(uuid.uuid4())
 
-        # Get the user's ID
-        user_id = get_user_id()
+    # Store the survey data in Replit Database
+    db[f'survey_{survey_id}'] = {
+        'title': title,
+        'questions': questions,
+        'cohortData': cohort_data,
+        'responses': {}  # Initialize an empty dictionary to store responses
+    }
 
-        # Retrieve the user's subscription information from the database
-        # For now, we'll assume a hardcoded subscription limit
-        max_bots_allowed = 100  # Example subscription limit
+    # Return the new survey ID
+    return jsonify({'surveyId': survey_id}), 200
 
-        # Check if the requested number of bots exceeds the user's subscription limit
-        if num_bots > max_bots_allowed:
-            return jsonify({'error': 'Requested number of AI agents exceeds your subscription limit.'}), 400
+@app.route('/run-survey/<survey_id>', methods=['POST'])
+def run_survey(survey_id):
+    data = request.get_json()
+    num_bots = int(data.get("num_bots", 10))
 
-        # Update the user's remaining AI agents in the database
-        update_user_remaining_agents(user_id, num_bots)
+    # Get the user's ID
+    user_id = get_user_id()
 
-        bot_responses = {}
-        MAX_CONCURRENT_THREADS = 25
-        batch_size = MAX_CONCURRENT_THREADS
-        num_batches = math.ceil(num_bots / batch_size)
+    # For now, we'll assume a hardcoded subscription limit
+    max_bots_allowed = 100  # Example subscription limit
 
-        # Get the survey from the database
-        survey_data = get_survey(survey_id)
-        survey_question = survey_data['questions'][0]['text']
-        options = survey_data['questions'][0]['options']
+    # Check if the requested number of bots exceeds the user's subscription limit
+    if num_bots > max_bots_allowed:
+        return jsonify({'error': 'Requested number of AI agents exceeds your subscription limit.'}), 400
 
-        # Create personas based on the cohort demographics from survey data
-        personas = create_personas(survey_data['cohort'], num_bots)
+    # Update the user's remaining AI agents in the database
+    update_user_remaining_agents(user_id, num_bots)
 
-        def execute_crew_for_bot(persona):
-            # Choose a random response
-            response = random.choice(options)
-            # Create a persona backstory
-            backstory = create_persona_backstory(persona, survey_question)
-            # Process the response using CrewAI
-            result = process_response(survey_question, options, response, backstory)
-            return persona['id'], result
+    bot_responses = {}
+    MAX_CONCURRENT_THREADS = 25
+    batch_size = MAX_CONCURRENT_THREADS
+    num_batches = math.ceil(num_bots / batch_size)
 
-        # Execute the Crew for each bot with personas in batches
-        for batch_num in range(num_batches):
-            start_index = batch_num * batch_size
-            end_index = min(start_index + batch_size, num_bots)
-            personas_batch = personas[start_index:end_index]
+    # Get the survey from the database
+    survey_data = db[f'survey_{survey_id}']
+    survey_question = survey_data['questions'][0]['text']
+    options = survey_data['questions'][0]['options']
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_THREADS) as executor:
-                futures = [executor.submit(execute_crew_for_bot, persona) for persona in personas_batch]
-                for future in tqdm(concurrent.futures.as_completed(futures), total=len(personas_batch), unit="bot", desc=f"Processing batch {batch_num+1}/{num_batches}"):
-                    persona_id, result = future.result()
-                    # Record response, associating it with the persona ID
-                    record_response(survey_id, {'response': result['response']}, persona_id)
+    # Create personas based on the cohort demographics from survey data
+    personas = create_personas(survey_data['cohortData'], num_bots)
 
-            time.sleep(1)  
+    def execute_crew_for_bot(persona):
+        # Choose a random response
+        response = random.choice(options)
+        # Create a persona backstory
+        backstory = create_persona_backstory(persona, survey_question)
+        # Process the response using CrewAI
+        result = process_response(survey_question, options, response, backstory)
+        return persona['id'], result
 
-        return jsonify({'message': 'Survey simulated successfully', 'personas': personas})
+    # Execute the Crew for each bot with personas in batches
+    for batch_num in range(num_batches):
+        start_index = batch_num * batch_size
+        end_index = min(start_index + batch_size, num_bots)
+        personas_batch = personas[start_index:end_index]
 
-    @app.route('/submit-response/<survey_id>', methods=['POST'])
-    def submit_response_endpoint(survey_id):
-        response_data = request.get_json()
-        record_response(survey_id, response_data)  # No need to pass persona_id here
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_CONCURRENT_THREADS) as executor:
+            futures = [executor.submit(execute_crew_for_bot, persona) for persona in personas_batch]
+            for future in tqdm(concurrent.futures.as_completed(futures), total=len(personas_batch), unit="bot", desc=f"Processing batch {batch_num+1}/{num_batches}"):
+                persona_id, result = future.result()
+                # Record response, associating it with the persona ID
+                db[f'survey_{survey_id}']['responses'][persona_id] = result
 
-        # Return a simple acknowledgment for the user
-        return jsonify({'message': 'Response submitted successfully!'})
-    
-    @app.route('/get-remaining-agents', methods=['GET'])
-    def get_remaining_agents():
-        # Get the user's ID
-        user_id = get_user_id()
+        time.sleep(1)  
 
-        # Retrieve the user's remaining AI agents from the database
-        remaining_agents = get_user_remaining_agents(user_id)
+    return jsonify({'message': 'Survey simulated successfully', 'personas': personas})
 
-        return jsonify({'remaining_agents': remaining_agents})
+@app.route('/submit-response/<survey_id>', methods=['POST'])
+def submit_response_endpoint(survey_id):
+    response_data = request.get_json()
+    persona_id = response_data.get('persona_id')
+    if persona_id:
+        db[f'survey_{survey_id}']['responses'][persona_id] = response_data
+    else:
+        db[f'survey_{survey_id}']['responses'].append(response_data)  # Handle cases without persona_id
 
+    # Return a simple acknowledgment for the user
+    return jsonify({'message': 'Response submitted successfully!'})
 
-    if __name__ == '__main__':
-        app.run(host='0.0.0.0', port=5000)
+@app.route('/get-remaining-agents', methods=['GET'])
+def get_remaining_agents():
+    # Get the user's ID
+    user_id = get_user_id()
+
+    # Retrieve the user's remaining AI agents from the database
+    remaining_agents = get_user_remaining_agents(user_id)
+
+    return jsonify({'remaining_agents': remaining_agents})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
