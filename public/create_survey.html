@@ -47,73 +47,201 @@
       }
     </style>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const genderRatioSlider = document.getElementById('gender-ratio-slider');
-        const ageRangeSlider = document.getElementById('age-range-slider');
-        const incomeRangeSlider = document.getElementById('income-range-slider');
+<script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.5.1/nouislider.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="js/charts-demo.js"></script>
+<script src="/js/main.js"></script>
 
-        noUiSlider.create(genderRatioSlider, {
-          start: [50],
-          connect: [true, false],
-          range: {
-            'min': 0,
-            'max': 100
-          },
-          format: wNumb({
-            decimals: 0,
-            suffix: '%'
-          })
-        });
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize sliders
+    const genderRatioSlider = document.getElementById('gender-ratio-slider');
+    const ageRangeSlider = document.getElementById('age-range-slider');
+    const incomeRangeSlider = document.getElementById('income-range-slider');
 
-        noUiSlider.create(ageRangeSlider, {
-          start: [25, 45],
-          connect: true,
-          range: {
-            'min': 0,
-            'max': 100
-          },
-          format: wNumb({
-            decimals: 0
-          })
-        });
+    noUiSlider.create(genderRatioSlider, {
+      start: [50],
+      connect: [true, false],
+      range: {
+        'min': 0,
+        'max': 100
+      },
+      format: wNumb({
+        decimals: 0,
+        suffix: '%'
+      }),
+      tooltips: true
+    });
 
-        noUiSlider.create(incomeRangeSlider, {
-          start: [0, 100000],
-          connect: true,
-          range: {
-            'min': 0,
-            'max': 1000000
-          },
-          format: wNumb({
-            decimals: 0,
-            prefix: '$'
-          })
-        });
+    noUiSlider.create(ageRangeSlider, {
+      start: [25, 45],
+      connect: true,
+      range: {
+        'min': 0,
+        'max': 100
+      },
+      format: wNumb({
+        decimals: 0
+      }),
+      tooltips: [true, true]
+    });
 
-        // Update label values
-        genderRatioSlider.noUiSlider.on('update', function(values, handle) {
-          document.querySelector('.malePercentage').innerText = values[handle];
-        });
+    noUiSlider.create(incomeRangeSlider, {
+      start: [0, 100000],
+      connect: true,
+      range: {
+        'min': 0,
+        'max': 1000000
+      },
+      format: wNumb({
+        decimals: 0,
+        prefix: '$'
+      }),
+      tooltips: [true, true]
+    });
 
-        ageRangeSlider.noUiSlider.on('update', function(values, handle) {
-          if (handle === 0) {
-            document.querySelector('.ageMinLabel').innerText = values[handle];
-          } else {
-            document.querySelector('.ageMaxLabel').innerText = values[handle];
-          }
-        });
+    // Update label values
+    genderRatioSlider.noUiSlider.on('update', function(values, handle) {
+      document.querySelector('.malePercentage').innerText = values[handle];
+    });
 
-        incomeRangeSlider.noUiSlider.on('update', function(values, handle) {
-          if (handle === 0) {
-            document.querySelector('.incomeMinLabel').innerText = values[handle];
-          } else {
-            document.querySelector('.incomeMaxLabel').innerText = values[handle];
-          }
-        });
+    ageRangeSlider.noUiSlider.on('update', function(values, handle) {
+      if (handle === 0) {
+        document.querySelector('.ageMinLabel').innerText = values[handle];
+      } else {
+        document.querySelector('.ageMaxLabel').innerText = values[handle];
+      }
+    });
 
+    incomeRangeSlider.noUiSlider.on('update', function(values, handle) {
+      if (handle === 0) {
+        document.querySelector('.incomeMinLabel').innerText = values[handle];
+      } else {
+        document.querySelector('.incomeMaxLabel').innerText = values[handle];
+      }
+    });
+
+    // Function to add a new question row
+    function addQuestion() {
+      const questionTable = document.getElementById('questionTable').getElementsByTagName('tbody')[0];
+      const newRow = document.createElement('tr');
+      newRow.className = 'bg-white question-row';
+      newRow.innerHTML = `
+        <td class="px-2 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+          <input type="text" class="border rounded-md p-2 w-full" placeholder="Enter question">
+        </td>
+        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+          <input type="text" class="border rounded-md p-2 w-full" placeholder="Option A">
+        </td>
+        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+          <input type="text" class="border rounded-md p-2 w-full" placeholder="Option B">
+        </td>
+        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+          <input type="text" class="border rounded-md p-2 w-full" placeholder="Option C">
+        </td>
+        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+          <input type="text" class="border rounded-md p-2 w-full" placeholder="Option D">
+        </td>
+        <td class="px-2 py-4 text-right">
+          <button class="text-red-500 hover:text-red-700 focus:outline-none remove-row-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 111.414 1.414L11.414 10l4.293 4.293a1 1 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 01-1.414-1.414L8.586 10 4.293 5.707a1 1 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </td>
+      `;
+      questionTable.appendChild(newRow);
+      attachRemoveHandlers();
+    }
+
+    // Function to remove a question row
+    function removeQuestion(event) {
+      const button = event.currentTarget;
+      button.closest('tr').remove();
+    }
+
+    // Attach event handlers to remove buttons
+    function attachRemoveHandlers() {
+      const removeButtons = document.querySelectorAll('.remove-row-btn');
+      removeButtons.forEach(button => {
+        button.removeEventListener('click', removeQuestion); // Remove previous event listeners to prevent duplicates
+        button.addEventListener('click', removeQuestion);
       });
-    </script>
+    }
+
+    // Initial attachment of remove handlers
+    attachRemoveHandlers();
+
+    // Add question button event handler
+    const addQuestionBtn = document.getElementById('addQuestionBtn');
+    addQuestionBtn.addEventListener('click', addQuestion);
+
+    // Submit survey button event handler
+    const submitSurveyBtn = document.getElementById('submitSurveyBtn');
+    submitSurveyBtn.addEventListener('click', async (event) => {
+      event.preventDefault(); 
+
+      // Get values from form fields
+      const surveyTitle = document.getElementById('surveyTitle').value;
+      const cohortId = document.getElementById('cohortId').value;
+      const genderRatio = document.querySelector('.malePercentage').innerText;
+      const minAge = document.querySelector('.ageMinLabel').innerText;
+      const maxAge = document.querySelector('.ageMaxLabel').innerText;
+      const minIncome = document.querySelector('.incomeMinLabel').innerText;
+      const maxIncome = document.querySelector('.incomeMaxLabel').innerText;
+      const locationType = document.getElementById('locationType').value;
+      const location = Array.from(document.getElementById('location').selectedOptions).map(option => option.value);
+
+      try {
+        const response = await axios.post('/create-survey', { 
+          title: surveyTitle,
+          questions: getQuestionsFromTable(), 
+          cohortData: {
+            cohortId: cohortId,
+            genderRatio: genderRatio,
+            ageRange: [minAge, maxAge],
+            incomeRange: [minIncome, maxIncome],
+            locationType: locationType,
+            location: location,
+          }
+        });
+
+        if (response.status === 200) {
+          alert("Survey created successfully!");
+          // Optionally redirect to survey page
+          // window.location.href = `survey.html?id=${response.data.surveyId}`;
+        } else {
+          console.error('Error creating survey:', response.status);
+          alert("Error creating survey. Please try again.");
+        }
+      } catch (error) {
+        console.error('Network error:', error);
+        alert("Network error occurred. Please check your internet connection.");
+      }
+    });
+
+    // Helper function to get questions from the question table
+    function getQuestionsFromTable() {
+      const questionRows = document.querySelectorAll('#questionTable tbody tr');
+      const questions = [];
+
+      questionRows.forEach(row => {
+        const questionText = row.querySelector('td:nth-child(1) input').value;
+        const options = [
+          row.querySelector('td:nth-child(2) input').value,
+          row.querySelector('td:nth-child(3) input').value,
+          row.querySelector('td:nth-child(4) input').value,
+          row.querySelector('td:nth-child(5) input').value
+        ];
+        questions.push({ text: questionText, options: options });
+      });
+
+      return questions;
+    }
+  });
+</script>
+
   </head>
   
 <body class="antialiased bg-body text-body font-body">
@@ -378,11 +506,10 @@
                   </div>
 
                   <div class="flex items-center justify-end">
-                    <button class="submit-survey-btn mt-4 w-auto py-2 px-3 text-xs text-white" 
-                            style="background-color: #015df4;" id="submitSurveyBtn">
+                    <button class="submit-survey-btn mt-4 w-auto py-2 px-3 text-xs text-white" style="background-color: #015df4;" id="submitSurveyBtn">
                       <span>Submit Survey</span>
                     </button>
-                  </div>
+                  </div>                  
                 </div>
               </div>
             </div>
