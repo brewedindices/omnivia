@@ -10,10 +10,10 @@ const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use('/api/surveys', surveyRoutes);
 
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
+// MongoDB Atlas connection string
+const mongoURI = 'mongodb+srv://brewedinsights:Johnmayer01%21@omnivia.k7suy4j.mongodb.net/surveyDB?retryWrites=true&w=majority&appName=Omnivia';
+
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
     .catch((err) => console.log(err));
 

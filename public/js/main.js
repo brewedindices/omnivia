@@ -458,6 +458,58 @@ function saveSurvey() {
 
 document.querySelector('.submit-survey-btn').addEventListener('click', saveSurvey);
 
+document.getElementById('survey-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const title = document.querySelector('input[name="surveyTitle"]').value;
+  const questions = Array.from(document.querySelectorAll('.question-row')).map(row => ({
+      question: row.querySelector('input[placeholder="Enter question"]').value,
+      options: [
+          row.querySelector('input[placeholder="Option A"]').value,
+          row.querySelector('input[placeholder="Option B"]').value,
+          row.querySelector('input[placeholder="Option C"]').value,
+          row.querySelector('input[placeholder="Option D"]').value,
+      ]
+  }));
+  const cohortId = document.querySelector('input[name="cohortId"]').value;
+  const numberOfAIAgents = document.querySelector('input[name="numberOfAIAgents"]').value;
+  const genderRatio = document.querySelector('input[name="genderRatio"]').value;
+  const minAge = document.querySelector('input[name="minAge"]').value;
+  const maxAge = document.querySelector('input[name="maxAge"]').value;
+  const minIncome = document.querySelector('input[name="minIncome"]').value;
+
+  const surveyData = {
+      title,
+      questions,
+      cohortId,
+      numberOfAIAgents,
+      genderRatio,
+      minAge,
+      maxAge,
+      minIncome
+  };
+
+  try {
+      const response = await fetch('/api/surveys', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(surveyData),
+      });
+
+      if (!response.ok) {
+          throw new Error('Network response was not ok');
+      }
+
+      const responseData = await response.json();
+      console.log('Survey created successfully:', responseData);
+  } catch (error) {
+      console.error('Error creating survey:', error);
+  }
+});
+
+
 app.listen(3000, () => {
   console.log('Server listening on port 3000');
 }); 
