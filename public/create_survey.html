@@ -211,7 +211,7 @@
 
       try {
     // Send the survey data to your MongoDB backend 
-    const response = await axios.post('mongodb+srv://brewedinsights:Johnmayer01%21@omnivia.k7suy4j.mongodb.net/?retryWrites=true&w=majority&appName=Omnivia', surveyData); 
+    const response = await axios.post('https://omnivia.brewedinsights.repl.co/api/surveys', surveyData); 
 
         if (response.status === 200) {
           alert("Survey created successfully!");
