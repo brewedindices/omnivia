@@ -388,7 +388,9 @@
               </div>
             </div>
           </div>
-          <hr class="border-t-2 border-gray-300 my-6"></section><section class="py-8 px-6"><div class="container mx-auto">
+          <hr class="border-t-2 border-gray-300 my-6"></section><section class="py-8 px-6">
+            <form id="survey-form">  
+            <div class="container mx-auto">
             <div class="flex flex-wrap -mx-4">
               <div class="w-full px-4 mb-6">
                 <div class="relative px-6 pb-6 py-4 bg-white rounded shadow">
@@ -448,6 +450,7 @@
               </div>
             </div>
           </div>
+            </form>
         </section>
         
         <section class="py-8 px-6">
@@ -763,6 +766,63 @@
     }
   });
 </script>
+
+<script>
+  document.getElementById('survey-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+  
+      const title = document.querySelector('input[name="surveyTitle"]').value;
+      const questions = [
+          {
+              question: document.querySelector('input[name="question"]').value,
+              options: [
+                  document.querySelector('input[name="optionA"]').value,
+                  document.querySelector('input[name="optionB"]').value,
+                  document.querySelector('input[name="optionC"]').value,
+                  document.querySelector('input[name="optionD"]').value,
+              ]
+          }
+      ];
+      const cohortId = document.querySelector('input[name="cohortId"]').value;
+      const numberOfAIAgents = document.querySelector('input[name="numberOfAIAgents"]').value;
+      const genderRatio = document.querySelector('input[name="genderRatio"]').value;
+      const minAge = document.querySelector('input[name="minAge"]').value;
+      const maxAge = document.querySelector('input[name="maxAge"]').value;
+      const minIncome = document.querySelector('input[name="minIncome"]').value;
+      const maxIncome = document.querySelector('input[name="maxIncome"]').value;
+  
+      const surveyData = {
+          title,
+          questions,
+          cohortId,
+          numberOfAIAgents,
+          genderRatio,
+          minAge,
+          maxAge,
+          minIncome,
+          maxIncome
+      };
+  
+      try {
+          const response = await fetch('http://localhost:3000/api/surveys', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(surveyData),
+          });
+  
+          if (!response.ok) {
+              throw new Error('Network response was not ok');
+          }
+  
+          const responseData = await response.json();
+          console.log('Survey created successfully:', responseData);
+      } catch (error) {
+          console.error('Error creating survey:', error);
+      }
+  });
+  </script>
 
 
 </body>
