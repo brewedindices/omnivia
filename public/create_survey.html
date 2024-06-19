@@ -192,20 +192,26 @@
       const maxIncome = document.querySelector('.incomeMaxLabel').innerText;
       const locationType = document.getElementById('locationType').value;
       const location = Array.from(document.getElementById('location').selectedOptions).map(option => option.value);
+      const numBots = document.getElementById('numBots').value;
+
+      // Create the survey data object
+      const surveyData = {
+        title: surveyTitle,
+        questions: getQuestionsFromTable(), 
+        cohortData: {
+          cohortId: cohortId,
+          genderRatio: parseFloat(genderRatio),
+          ageRange: [parseInt(minAge), parseInt(maxAge)],
+          incomeRange: [parseInt(minIncome), parseInt(maxIncome)],
+          locationType: locationType,
+          location: location,
+          numBots: parseInt(numBots)
+        }
+      };
 
       try {
-        const response = await axios.post('/create-survey', { 
-          title: surveyTitle,
-          questions: getQuestionsFromTable(), 
-          cohortData: {
-            cohortId: cohortId,
-            genderRatio: genderRatio,
-            ageRange: [minAge, maxAge],
-            incomeRange: [minIncome, maxIncome],
-            locationType: locationType,
-            location: location,
-          }
-        });
+    // Send the survey data to your MongoDB backend 
+    const response = await axios.post('mongodb+srv://brewedinsights:Johnmayer01%21@omnivia.k7suy4j.mongodb.net/?retryWrites=true&w=majority&appName=Omnivia', surveyData); 
 
         if (response.status === 200) {
           alert("Survey created successfully!");

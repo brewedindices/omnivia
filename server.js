@@ -2,10 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const cors = require('cors'); // Add cors middleware
 const surveyRoutes = require('./src/routes/surveyRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Enable CORS for your Replit app
+app.use(cors()); 
 
 app.use(bodyParser.json());
 app.use('/api/surveys', surveyRoutes);
