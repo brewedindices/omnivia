@@ -1,15 +1,16 @@
 const express = require('express');
-const router = express.Router();
-const Survey = require('../models/Survey.js'); // Ensure the model path is correct
+const Survey = require('../models/Survey');
 
-// Example route
+const router = express.Router();
+
+// Create a new survey
 router.post('/', async (req, res) => {
     try {
-        const survey = new Survey(req.body);
-        await survey.save();
-        res.status(201).send(survey);
-    } catch (err) {
-        res.status(400).send(err);
+        const newSurvey = new Survey(req.body);
+        const savedSurvey = await newSurvey.save();
+        res.status(201).json(savedSurvey);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
     }
 });
 
