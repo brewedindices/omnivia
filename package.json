@@ -15,11 +15,13 @@
     "css": "npm-run-all --sequential css-*",
     "build": "npm-run-all --sequential clean copy-* css",
     "watch": "npm-run-all build --parallel watch-templates watch-css browsersync",
-    "watch-templates": "nodemon --watch ./src/html/ -e html -x \"cpx \"src/html/*.html\" public/\"",
-    "watch-css": "tailwindcss build -i src/tailwind/tailwind.css -c src/tailwind/tailwind.config.js -o public/css/tailwind/tailwind.min.css --minify --watch"
+    "watch-templates": "nodemon --watch ./src/html/ -e html -x \"cpx \\\"src/html/*.html\\\" public/\"",
+    "watch-css": "tailwindcss build -i src/tailwind/tailwind.css -c src/tailwind/tailwind.config.js -o public/css/tailwind/tailwind.min.css --minify --watch",
+    "start": "concurrently \"node server.js\" \"npm run browsersync\""
   },
   "dependencies": {
     "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "mongoose": "^8.4.3",
@@ -28,6 +30,7 @@
   "devDependencies": {
     "autoprefixer": "^10.4.0",
     "browser-sync": "^2.27.7",
+    "concurrently": "^7.0.0",
     "cpx": "^1.5.0",
     "nodemon": "^2.0.14",
     "npm-run-all": "^4.1.5",
